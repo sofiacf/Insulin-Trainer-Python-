@@ -2,7 +2,7 @@ import pygame
 pygame.init()
 
 def Setup():
-	global width, height, screen, shouldCancel, key, zero, one, two, three, four, five, six, seven, eight, nine, numberKeys, submit, windowBlitted
+	global width, height, screen, shouldCancel, key, zero, one, two, three, four, five, six, seven, eight, nine, numbers, submit, windowBlitted
 	global firstNumberBlitted, secondNumberBlitted, thirdNumberBlitted, graph
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
@@ -76,7 +76,7 @@ def displayMenuButtons():
 def collectAndDisplayInput():
 	global firstNumberBlitted, secondNumberBlitted, thirdNumberBlitted
 	if windowBlitted == True and cancel.selected == False:
-		for number in numberKeys:
+		for number in numbers:
 			if key[number.name] == 1 and firstNumberBlitted == False:
 				number.first = True	
 			elif key[number.name] == 1 and firstNumberBlitted == True and secondNumberBlitted == False:
