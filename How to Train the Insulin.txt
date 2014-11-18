@@ -1,0 +1,15 @@
+	The UI should present the main graph, with settings for different 
+lengths of time, and date selection in general.
+
+	In the upper right corner, there are three buttons:
+		-Enter blood sugar reading
+		-Enter insulin dose
+		-Enter carb consumption
+
+	When you press a button, a box appears with a text entry field, a 
+date selecter (with now option?), and some option buttons if applicable. The various boxes are customized for the type of input.
+
+	The function that displays the box takes in buttons as input. 
+
+	The main graph takes up most of the window's area. It is populated 
+with data points from previous entries. The axes are time (x, variable units), and blood sugar (y, mg/dL). The lines of the graph connect blood sugar readings. Other data points (for insulin and food input) are plotted on the line with small distinct symbols of different color than blood sugar points. It is possible to hover over each point for more information on the input.
