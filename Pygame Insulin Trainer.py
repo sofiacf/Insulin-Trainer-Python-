@@ -1,21 +1,19 @@
 import pygame
+import sys
 pygame.init()
 
 def Setup():
-	global width, height, screen, shouldCancel, key, zero, one, two, three, four, five, six, seven, eight, nine, numbers, submit, windowBlitted
-	global firstNumberBlitted, secondNumberBlitted, thirdNumberBlitted, graph
+	global width, height, screen, key, windowBlitted, graph
+	global zero, one, two, three, four, five, six, seven, eight, nine, numbers, currentNumber, inputNumbers
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
-	windowBlitted = False
-	shouldCancel = False
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("This is the python version of Insulin Trainer")
 	submit = False
 	graph = pygame.Surface((width-100, height-100))
-	firstNumberBlitted = False
-	secondNumberBlitted = False
-	thirdNumberBlitted = False
-
+	inputNumbers = []
+	currentNumber = ""
+	font = pygame.font.Font(None, 14)
 	class Number():
 		def __init__(self, name, image, value):
 			self.name = name
@@ -33,7 +31,6 @@ def Setup():
 	nine = Number(pygame.K_9, pygame.image.load("9.png"), 9)
 	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
 Setup()
-
 class Button():
 	def __init__(self, image, isSelected, commonName, yOffset):
 		self.image = image
@@ -73,32 +70,49 @@ allTheButtons = [bloodSugarInputButton, foodConsumptionButton, insulinDoseButton
 def displayMenuButtons():
 	for button in MenuButtons:
 		screen.blit(button.image, button.pos)
-def collectAndDisplayInput():
-	global firstNumberBlitted, secondNumberBlitted, thirdNumberBlitted
-	if windowBlitted == True and cancel.selected == False:
+
+firstNumber = [None, (0, 0)]
+secondNumber = [None, (10, 0)]
+thirdNumber = [None, (20, 0)]
+def displayInputWindow():
+	for button in MenuButtons:
+		if button.selected == True and cancel.selected == False:
+			windowBlitted = True
+			screen.blit(button.field, button.fieldpos)
+			screen.blit(cancel.image, cancel.pos)
+			screen.blit(add.image, add.pos)
+			return True
+		elif cancel.selected == True:
+			return False
+def collectInput(event):
+	global firstNumber, secondNumber, thirdNumber, inputNumbers, currentNumber
+	if displayInputWindow():
+			if event.type == pygame.KEYDOWN:
+				if firstNumber[0] == None:
+					firstNumber[0] = event.unicode
+					inputNumbers.append(firstNumber)
+				elif secondNumber[0] == None:
+					secondNumber[0] = event.unicode
+					inputNumbers.append(secondNumber)
+				elif thirdNumber[0] == None:
+					thirdNumber[0] = event.unicode
+					inputNumbers.append(thirdNumber)
+def submit():
+	global currentNumber
+	for inputnumber in inputNumbers:
+		if inputnumber[0] and len(currentNumber) <= 2:
+			currentNumber = currentNumber + inputnumber[0]
+	if len(currentNumber) >= 1:
+		int(currentNumber)
+def displayInput(): 
+	if displayInputWindow():  
 		for number in numbers:
-			if key[number.name] == 1 and firstNumberBlitted == False:
-				number.first = True	
-			elif key[number.name] == 1 and firstNumberBlitted == True and secondNumberBlitted == False:
-				number.second = True
-			elif key[number.name] == 1 and secondNumberBlitted == False:
-				number.third = True
-			if number.first == True:
-				firstNumberBlitted = True
-				screen.blit(number.image, ((width-100), 90))
-			if number.second == True and firstNumberBlitted == True:
-				secondNumberBlitted = True
-				screen.blit(number.image, ((width-90), 90))
-			if number.third == True and secondNumberBlitted == True:
-				thirdNumberBlitted = True
-				screen.blit(number.image, ((width-80), 90))
-			else:
-				number.first = False
-				number.second = False
-				number.third = False 
-# def submitToDatabase():
-
-
+			if str(number.value) == firstNumber[0]:
+				screen.blit(number.image, firstNumber[1])
+			if str(number.value) == secondNumber[0]:
+				screen.blit(number.image, secondNumber[1])
+			if str(number.value) == thirdNumber[0]:
+				screen.blit(number.image, thirdNumber[1])
 def isButtonPressed():
 	if pygame.mouse.get_pressed()[0] == True:
 		for button in allTheButtons:
@@ -111,32 +125,28 @@ def isButtonPressed():
 			if inX and inY:
 				button.selected = True
 			else: button.selected = False
-def displayInputWindow():
-	global windowBlitted
-	for button in MenuButtons:
-		if button.selected == True and cancel.selected == False:
-			windowBlitted = True
-			screen.blit(button.field, button.fieldpos)
-			screen.blit(cancel.image, cancel.pos)
-			screen.blit(add.image, add.pos)
-		elif cancel.selected == True:
-			windowBlitted = False
+
+sampleImage = pygame.image.load("Sample Image.jpg")
+clock = pygame.time.Clock()
 
 running = True
 while running:
+	pygame.event.pump()
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
-	pygame.event.get()
 	screen.blit(graph, (50, 50))
 	graph.fill((0,0,0))
-	graph.blit(pygame.image.load("Sample Image.jpg"), (0,0))
+	graph.blit(sampleImage, (0,0))
 	displayMenuButtons()
 	isButtonPressed()
 	displayInputWindow()
-	collectAndDisplayInput()
-	pygame.event.pump
+	displayInput()
+	submit()
 	pygame.display.flip()
-	pygame.time.delay(12)
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
-			running = False 
+			running = False
+		else:
+			collectInput(event)
+	clock.tick(20)
+sys.exit()
