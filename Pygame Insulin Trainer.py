@@ -1,5 +1,6 @@
 import pygame
 import sys
+import pickle
 pygame.init()
 
 def Setup():
@@ -10,7 +11,6 @@ def Setup():
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("This is the python version of Insulin Trainer")
-	submit = False
 	graph = pygame.Surface((width-100, height-100))
 
 	class Number():
@@ -35,7 +35,6 @@ def Setup():
 	firstNumber = [None, (0, 0)]
 	secondNumber = [None, (10, 0)]
 	thirdNumber = [None, (20, 0)]
-
 Setup()
 
 class Button():
@@ -65,14 +64,14 @@ class AddMenu(Button):
 		self.fieldpos = (width - pygame.Surface.get_size(self.field)[0], 0)
 		self.type = "AddMenuButton"
 def AddMenuSetup():
-	global bloodSugarInputButton, insulinDoseButton, foodConsumptionButton, MenuButtons, allTheButtons
-	bloodSugarInputButton = AddMenu((pygame.image.load("Blood Sugar Button.png")), 0, False, "Blood Sugar", pygame.image.load("Blood Sugar Input Field.png"))
+	global bloodSugarButton, insulinDoseButton, foodConsumptionButton, MenuButtons, allTheButtons
+	bloodSugarButton = AddMenu((pygame.image.load("Blood Sugar Button.png")), 0, False, "Blood Sugar", pygame.image.load("Blood Sugar Input Field.png"))
 	insulinDoseButton = AddMenu((pygame.image.load("Insulin Dose Button.png")), 1, False, "Insulin Dose", pygame.image.load("Insulin Dose Input Field.png"))
 	foodConsumptionButton = AddMenu((pygame.image.load("Food Consumption Button.png")), 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"))
-	MenuButtons = [bloodSugarInputButton, foodConsumptionButton, insulinDoseButton]
+	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
 
-allTheButtons = [bloodSugarInputButton, foodConsumptionButton, insulinDoseButton, add, cancel]
+allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
 def displayMenuButtons():
 	for button in MenuButtons:
@@ -120,9 +119,12 @@ def collectInput(event):
 					secondNumber[0] = None
 				elif firstNumber[0]:
 					firstNumber[0] = None
-				inputNumbers.pop()
+				if len(inputNumbers) != 0: 
+					inputNumbers.pop()
+			elif event.key == pygame.K_RETURN:
+				submit()
 			else:
-				print("That is not acceptable input. Please try again.")
+				print("That is not acceptable input. Please try again with a /NUMBER/.")
 def displayInput(): 
 	if displayInputWindow():  
 		for number in numbers:
@@ -132,7 +134,7 @@ def displayInput():
 				screen.blit(number.image, secondNumber[1])
 			if str(number.value) == thirdNumber[0]:
 				screen.blit(number.image, thirdNumber[1])
-def submit():
+def getCurrentNumber():
 	currentNumber = ""
 	if len(currentNumber) < len(inputNumbers):
 		for inputnumber in inputNumbers:
@@ -140,7 +142,8 @@ def submit():
 	if len(currentNumber) >= 1:
 		currentNumber = int(currentNumber)
 	return currentNumber
-
+def submit():
+	currentNumber = getCurrentNumber()
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
 
@@ -155,7 +158,7 @@ while running:
 	isButtonPressed()
 	displayInputWindow()
 	displayInput()
-	submit()
+	getCurrentNumber()
 	pygame.display.flip()
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
