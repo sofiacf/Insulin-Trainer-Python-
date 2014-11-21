@@ -3,7 +3,7 @@ import sys
 pygame.init()
 
 def Setup():
-	global width, height, screen, key, windowBlitted, graph
+	global width, height, screen, key, graph
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
 	global inputNumbers, firstNumber, secondNumber, thirdNumber
 	(width, height) = (500, 500)
@@ -92,7 +92,6 @@ def isButtonPressed():
 def displayInputWindow():
 	for button in MenuButtons:
 		if button.selected == True and cancel.selected == False:
-			windowBlitted = True
 			screen.blit(button.field, button.fieldpos)
 			screen.blit(cancel.image, cancel.pos)
 			screen.blit(add.image, add.pos)
@@ -101,11 +100,11 @@ def displayInputWindow():
 			return False
 def collectInput(event):
 	global firstNumber, secondNumber, thirdNumber, inputNumbers
+	numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 	if displayInputWindow():
 		if event.type == pygame.KEYDOWN:
-			if event.unicode in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+			if event.unicode in numbers:
 				if firstNumber[0] == None:
-					print(event.unicode)
 					firstNumber[0] = event.unicode
 					inputNumbers.append(firstNumber)
 				elif secondNumber[0] == None:
@@ -114,16 +113,16 @@ def collectInput(event):
 				elif thirdNumber[0] == None:
 					thirdNumber[0] = event.unicode
 					inputNumbers.append(thirdNumber)
+			elif event.key == pygame.K_BACKSPACE:
+				if thirdNumber[0]:
+					thirdNumber[0] = None
+				elif secondNumber[0]:
+					secondNumber[0] = None
+				elif firstNumber[0]:
+					firstNumber[0] = None
+				inputNumbers.pop()
 			else:
 				print("That is not acceptable input. Please try again.")
-def submit():
-	currentNumber = ""
-	if len(currentNumber) < len(inputNumbers):
-		for inputnumber in inputNumbers:
-				currentNumber = currentNumber + inputnumber[0]
-	if len(currentNumber) >= 1:
-		currentNumber = int(currentNumber)
-	return currentNumber
 def displayInput(): 
 	if displayInputWindow():  
 		for number in numbers:
@@ -133,13 +132,20 @@ def displayInput():
 				screen.blit(number.image, secondNumber[1])
 			if str(number.value) == thirdNumber[0]:
 				screen.blit(number.image, thirdNumber[1])
+def submit():
+	currentNumber = ""
+	if len(currentNumber) < len(inputNumbers):
+		for inputnumber in inputNumbers:
+				currentNumber = currentNumber + inputnumber[0]
+	if len(currentNumber) >= 1:
+		currentNumber = int(currentNumber)
+	return currentNumber
 
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
 
 running = True
 while running:
-	pygame.event.pump()
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
 	screen.blit(graph, (50, 50))
