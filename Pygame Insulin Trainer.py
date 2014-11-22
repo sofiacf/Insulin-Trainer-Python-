@@ -1,12 +1,14 @@
 import pygame
 import sys
 import pickle
+import datetime
 pygame.init()
+
 
 def Setup():
 	global width, height, screen, key, graph
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
-	global inputNumbers, firstNumber, secondNumber, thirdNumber
+	global inputNumbers, firstNumber, secondNumber, thirdNumber, storedNumbers
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
@@ -30,6 +32,12 @@ def Setup():
 	nine = Number(pygame.K_9, pygame.image.load("9.png"), 9)
 	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
 
+	def loadData():
+		inputDataObject = open("Blood Sugar Data.txt", 'rb')
+		return pickle.load(inputDataObject)
+		inputDataObject.close()
+
+	storedNumbers = loadData()
 	currentNumber = ""
 	inputNumbers = []
 	firstNumber = [None, (0, 0)]
@@ -70,6 +78,11 @@ def AddMenuSetup():
 	foodConsumptionButton = AddMenu((pygame.image.load("Food Consumption Button.png")), 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"))
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
+
+class Data():
+	def __init__(self, arg):
+		self.arg = arg
+		
 
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
@@ -140,13 +153,24 @@ def getCurrentNumber():
 		for inputnumber in inputNumbers:
 				currentNumber = currentNumber + inputnumber[0]
 	if len(currentNumber) >= 1:
-		currentNumber = int(currentNumber)
+		currentNumber = str(currentNumber)
 	return currentNumber
 def submit():
+	global storedNumbers
 	currentNumber = getCurrentNumber()
+	if len(currentNumber) >= 1:
+		storedNumbers.append([currentNumber, datetime.datetime.now()])
+	inputData = "Blood Sugar Data.txt"
+	inputDataObject = open(inputData, 'wb')
+	pickle.dump(storedNumbers, inputDataObject)
+	inputDataObject.close()
+
+	inputDataObject = open("Blood Sugar Data.txt", 'rb')
+	print(pickle.load(inputDataObject))
+	inputDataObject.close()
+	return storedNumbers
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
-
 running = True
 while running:
 	key = pygame.key.get_pressed()
