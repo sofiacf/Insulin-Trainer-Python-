@@ -31,16 +31,24 @@ def Setup():
 	nine = Number(pygame.K_9, pygame.image.load("9.png"), 9)
 	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
 
-	def loadData():
-		inputDataObject = open("Blood Sugar Data.txt", 'r')
-		return json.load(inputDataObject)
-		inputDataObject.close()
-
-	storedNumbers = loadData()
+	storedNumbers = Data.update()
 	currentNumber = ""
 	inputNumbers = []
+class Data():
+	def __init__(self, date, inputtype, value):
+		self.date = date
+		self.type = inputType
+		self.value = value
+	def add(value):
+		inputFile = "Blood Sugar Data.txt"
+		inputFileObject = open(inputFile, 'w')
+		json.dump(inputFile, inputFileObject)
+		inputFileObject.close()
+	def update():
+		inputFileObject = open("Blood Sugar Data.txt", 'r')
+		return json.load(inputFileObject)
+		inputFileObject.close()
 Setup()
-
 class Button():
 	def __init__(self, image, isSelected, commonName, yOffset):
 		self.image = image
@@ -57,7 +65,7 @@ def ButtonSetup():
 ButtonSetup()
 
 class AddMenu(Button):
-	def __init__(self, image, inputID, isSelected, commonName, field):
+	def __init__(self, image, inputID, isSelected, commonName, field, displayed):
 		self.image = image
 		self.id = inputID
 		self.selected = isSelected
@@ -66,29 +74,15 @@ class AddMenu(Button):
 		self.size = pygame.Surface.get_size(self.image)
 		self.field = field
 		self.fieldpos = (width - pygame.Surface.get_size(self.field)[0], 0)
-		self.type = "AddMenuButton"
+		self.displayed = displayed
 def AddMenuSetup():
 	global bloodSugarButton, insulinDoseButton, foodConsumptionButton, MenuButtons, allTheButtons
-	bloodSugarButton = AddMenu((pygame.image.load("Blood Sugar Button.png")), 0, False, "Blood Sugar", pygame.image.load("Blood Sugar Input Field.png"))
-	insulinDoseButton = AddMenu((pygame.image.load("Insulin Dose Button.png")), 1, False, "Insulin Dose", pygame.image.load("Insulin Dose Input Field.png"))
-	foodConsumptionButton = AddMenu((pygame.image.load("Food Consumption Button.png")), 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"))
+	bloodSugarButton = AddMenu((pygame.image.load("Blood Sugar Button.png")), 0, False, "Blood Sugar", pygame.image.load("Blood Sugar Input Field.png"), False)
+	insulinDoseButton = AddMenu((pygame.image.load("Insulin Dose Button.png")), 1, False, "Insulin Dose", pygame.image.load("Insulin Dose Input Field.png"), False)
+	foodConsumptionButton = AddMenu((pygame.image.load("Food Consumption Button.png")), 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"), False)
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
 
-class Data():
-	def __init__(self, date, inputtype, value):
-		self.date = date
-		self.type = inputType
-		self.value = value
-	def add(value):
-		inputFile = "Blood Sugar Data.txt"
-		inputFileObject = open(inputData, 'w')
-		json.dump(inputdata, inputFileObject)
-		inputFileObject.close()
-	def update():
-		inputDataObject = open("Blood Sugar Data.txt", 'r')
-		json.load(inputDataObject())
-		inputDataObject.close()
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
 def displayMenuButtons(): ##This is always blitting the usual menu buttons.
@@ -113,6 +107,7 @@ def displayInputWindow(): ##If you clicked on a button, it'll show the input scr
 			screen.blit(button.field, button.fieldpos)
 			screen.blit(cancel.image, cancel.pos)
 			screen.blit(add.image, add.pos)
+			button.displayed = True
 			return True
 		elif cancel.selected == True:
 			currentNumber = []
@@ -149,17 +144,19 @@ def submit(): ##On enter, appends currentNumber to storedNumbers and dumps it to
 	global storedNumbers
 	currentNumber = getCurrentNumber()
 	currentDate = str(datetime.datetime.now())
-	if len(currentNumber) >= 1:
-		storedNumbers.append([currentNumber, currentDate])
-	inputData = "Blood Sugar Data.txt"
-	inputDataObject = open(inputData, 'w')
-	json.dump(storedNumbers, inputDataObject)
-	inputDataObject.close()
-
+	# if len(currentNumber) >= 1:
+		# storedNumbers.append([currentNumber, currentDate])
+	Data.add(storedNumbers)
+	print(storedNumbers)
 	# inputDataObject = open("Blood Sugar Data.txt", 'r')
 	# print(json.load(inputDataObject))
 	# inputDataObject.close()
 	# return storedNumbers
+	def getInputType():
+		for button in MenuButtons:
+			if button.displayed == True:
+				inputType = button.name
+				return inputType
 
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
