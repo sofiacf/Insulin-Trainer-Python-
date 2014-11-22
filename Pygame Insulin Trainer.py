@@ -7,7 +7,7 @@ pygame.init()
 def Setup():
 	global width, height, screen, key, graph
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
-	global inputNumbers, firstNumber, secondNumber, thirdNumber, storedNumbers
+	global inputNumbers, storedNumbers
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
@@ -36,13 +36,9 @@ def Setup():
 		return json.load(inputDataObject)
 		inputDataObject.close()
 
-	# storedNumbers = loadData()
-	storedNumbers = []
+	storedNumbers = loadData()
 	currentNumber = ""
 	inputNumbers = []
-	firstNumber = [None, (0, 0)]
-	secondNumber = [None, (10, 0)]
-	thirdNumber = [None, (20, 0)]
 Setup()
 
 class Button():
@@ -86,13 +82,16 @@ class Data():
 		self.value = value
 	def add():
 		print(cats)
-
+	def update():
+		inputDataObject = open("Blood Sugar Data.txt", 'r')
+		json.load(inputDataObject())
+		inputDataObject.close()
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
-def displayMenuButtons():
+def displayMenuButtons(): ##This is always blitting the usual menu buttons.
 	for button in MenuButtons:
 		screen.blit(button.image, button.pos)
-def isButtonPressed():
+def isButtonPressed(): ##This needs fixing.
 	if pygame.mouse.get_pressed()[0] == True:
 		for button in allTheButtons:
 			inX = False
@@ -104,7 +103,7 @@ def isButtonPressed():
 			if inX and inY:
 				button.selected = True
 			else: button.selected = False
-def displayInputWindow():
+def displayInputWindow(): ##If you clicked on a button, it'll show the input screen :D Unless the button was cancel.
 	global currentNumber
 	for button in MenuButtons:
 		if button.selected == True and cancel.selected == False:
@@ -115,44 +114,27 @@ def displayInputWindow():
 		elif cancel.selected == True:
 			currentNumber = []
 			return False
-def collectInput(event):
-	global firstNumber, secondNumber, thirdNumber, inputNumbers
+def collectInput(event): ##Gets keydown events and adds numbers to inputNumbers array; calls submit on enter
+	global inputNumbers
 	numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 	if displayInputWindow():
 		if event.type == pygame.KEYDOWN:
-			if event.unicode in numbers:
-				if firstNumber[0] == None:
-					firstNumber[0] = event.unicode
-					inputNumbers.append(firstNumber)
-				elif secondNumber[0] == None:
-					secondNumber[0] = event.unicode
-					inputNumbers.append(secondNumber)
-				elif thirdNumber[0] == None:
-					thirdNumber[0] = event.unicode
-					inputNumbers.append(thirdNumber)
-			elif event.key == pygame.K_BACKSPACE:
-				if thirdNumber[0]:
-					thirdNumber[0] = None
-				elif secondNumber[0]:
-					secondNumber[0] = None
-				elif firstNumber[0]:
-					firstNumber[0] = None
-				if len(inputNumbers) != 0: 
-					inputNumbers.pop()
+			if event.unicode in numbers and len(inputNumbers) < 3:
+				targetIndex = len(inputNumbers)
+				inputNumbers.append([event.unicode, (targetIndex * 10, 0)])
+			elif event.key == pygame.K_BACKSPACE and len(inputNumbers) != 0:
+				inputNumbers.pop()
 			elif event.key == pygame.K_RETURN:
 				submit()
 			else:
 				print("That is not acceptable input. Please try again with a /NUMBER/.")
-def displayInput(): 
-	if displayInputWindow():  
+def displayInput(): ##Blits numbers as user types them -- as long as there's at least one...
+	if displayInputWindow() and len(inputNumbers) > 0:  
 		for number in numbers:
-			if str(number.value) == firstNumber[0]:
-				screen.blit(number.image, firstNumber[1])
-			if str(number.value) == secondNumber[0]:
-				screen.blit(number.image, secondNumber[1])
-			if str(number.value) == thirdNumber[0]:
-				screen.blit(number.image, thirdNumber[1])
-def getCurrentNumber():
+			for inputNumber in inputNumbers:
+				if str(number.value) == inputNumber[0]:
+					screen.blit(number.image, inputNumber[1])
+def getCurrentNumber(): ##Gets inputNumbers array from submit and returns it as string 'currentNumber"
 	currentNumber = ""
 	if len(currentNumber) < len(inputNumbers):
 		for inputnumber in inputNumbers:
@@ -160,7 +142,7 @@ def getCurrentNumber():
 	if len(currentNumber) >= 1:
 		currentNumber = str(currentNumber)
 	return currentNumber
-def submit():
+def submit(): ##On enter, appends currentNumber to storedNumbers and dumps it to the .. file.. 
 	global storedNumbers
 	currentNumber = getCurrentNumber()
 	currentDate = str(datetime.datetime.now())
@@ -171,10 +153,10 @@ def submit():
 	json.dump(storedNumbers, inputDataObject)
 	inputDataObject.close()
 
-	inputDataObject = open("Blood Sugar Data.txt", 'r')
-	print(json.load(inputDataObject))
-	inputDataObject.close()
-	return storedNumbers
+	# inputDataObject = open("Blood Sugar Data.txt", 'r')
+	# print(json.load(inputDataObject))
+	# inputDataObject.close()
+	# return storedNumbers
 
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
