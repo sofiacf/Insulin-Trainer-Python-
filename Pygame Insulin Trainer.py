@@ -4,7 +4,6 @@ import pickle
 import datetime
 pygame.init()
 
-
 def Setup():
 	global width, height, screen, key, graph
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
@@ -80,8 +79,8 @@ def AddMenuSetup():
 AddMenuSetup()
 
 class Data():
-	def __init__(self, arg):
-		self.arg = arg
+	def __init__(self, ):
+		self. = 
 		
 
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
@@ -169,6 +168,7 @@ def submit():
 	print(pickle.load(inputDataObject))
 	inputDataObject.close()
 	return storedNumbers
+
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
 running = True
