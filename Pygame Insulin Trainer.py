@@ -80,8 +80,11 @@ class Data():
 		self.date = date
 		self.type = inputType
 		self.value = value
-	def add():
-		print(cats)
+	def add(value):
+		inputFile = "Blood Sugar Data.txt"
+		inputFileObject = open(inputData, 'w')
+		json.dump(inputdata, inputFileObject)
+		inputFileObject.close()
 	def update():
 		inputDataObject = open("Blood Sugar Data.txt", 'r')
 		json.load(inputDataObject())
