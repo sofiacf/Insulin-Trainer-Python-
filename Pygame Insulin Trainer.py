@@ -1,6 +1,6 @@
 import pygame
 import sys
-import pickle
+import json
 import datetime
 pygame.init()
 
@@ -32,11 +32,12 @@ def Setup():
 	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
 
 	def loadData():
-		inputDataObject = open("Blood Sugar Data.txt", 'rb')
-		return pickle.load(inputDataObject)
+		inputDataObject = open("Blood Sugar Data.txt", 'r')
+		return json.load(inputDataObject)
 		inputDataObject.close()
 
-	storedNumbers = loadData()
+	# storedNumbers = loadData()
+	storedNumbers = []
 	currentNumber = ""
 	inputNumbers = []
 	firstNumber = [None, (0, 0)]
@@ -79,9 +80,12 @@ def AddMenuSetup():
 AddMenuSetup()
 
 class Data():
-	def __init__(self, ):
-		self. = 
-		
+	def __init__(self, date, inputtype, value):
+		self.date = date
+		self.type = inputType
+		self.value = value
+	def add():
+		print(cats)
 
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
@@ -101,6 +105,7 @@ def isButtonPressed():
 				button.selected = True
 			else: button.selected = False
 def displayInputWindow():
+	global currentNumber
 	for button in MenuButtons:
 		if button.selected == True and cancel.selected == False:
 			screen.blit(button.field, button.fieldpos)
@@ -108,6 +113,7 @@ def displayInputWindow():
 			screen.blit(add.image, add.pos)
 			return True
 		elif cancel.selected == True:
+			currentNumber = []
 			return False
 def collectInput(event):
 	global firstNumber, secondNumber, thirdNumber, inputNumbers
@@ -157,15 +163,16 @@ def getCurrentNumber():
 def submit():
 	global storedNumbers
 	currentNumber = getCurrentNumber()
+	currentDate = str(datetime.datetime.now())
 	if len(currentNumber) >= 1:
-		storedNumbers.append([currentNumber, datetime.datetime.now()])
+		storedNumbers.append([currentNumber, currentDate])
 	inputData = "Blood Sugar Data.txt"
-	inputDataObject = open(inputData, 'wb')
-	pickle.dump(storedNumbers, inputDataObject)
+	inputDataObject = open(inputData, 'w')
+	json.dump(storedNumbers, inputDataObject)
 	inputDataObject.close()
 
-	inputDataObject = open("Blood Sugar Data.txt", 'rb')
-	print(pickle.load(inputDataObject))
+	inputDataObject = open("Blood Sugar Data.txt", 'r')
+	print(json.load(inputDataObject))
 	inputDataObject.close()
 	return storedNumbers
 
