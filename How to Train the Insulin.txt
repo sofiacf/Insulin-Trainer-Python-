@@ -13,3 +13,5 @@ date selecter (with now option?), and some option buttons if applicable. The var
 
 	The main graph takes up most of the window's area. It is populated 
 with data points from previous entries. The axes are time (x, variable units), and blood sugar (y, mg/dL). The lines of the graph connect blood sugar readings. Other data points (for insulin and food input) are plotted on the line with small distinct symbols of different color than blood sugar points. It is possible to hover over each point for more information on the input.
+
+Add keyboard shortcuts for input fields in case you don't have a mouse.

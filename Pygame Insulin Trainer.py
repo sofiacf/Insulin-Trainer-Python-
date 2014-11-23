@@ -8,12 +8,14 @@ def Setup():
 	global width, height, screen, key, graph
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
 	global inputNumbers, storedNumbers
+	global now
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("This is the python version of Insulin Trainer")
 	graph = pygame.Surface((width-100, height-100))
-
+	now = datetime.datetime.now()
+	print()
 	class Number():
 		def __init__(self, name, image, value):
 			self.name = name
@@ -30,8 +32,9 @@ def Setup():
 	eight = Number(pygame.K_8, pygame.image.load("8.png"), 8)
 	nine = Number(pygame.K_9, pygame.image.load("9.png"), 9)
 	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
-
-	storedNumbers = Data.update()
+	if Data.update():
+		storedNumbers = [Data.update()]
+	else: storedNumbers = []
 	currentNumber = ""
 	inputNumbers = []
 class Data():
@@ -42,10 +45,11 @@ class Data():
 	def add(value):
 		inputFile = "Blood Sugar Data.txt"
 		inputFileObject = open(inputFile, 'w')
-		json.dump(inputFile, inputFileObject)
+		json.dump(value, inputFileObject)
 		inputFileObject.close()
 	def update():
-		inputFileObject = open("Blood Sugar Data.txt", 'r')
+		inputFile = "Blood Sugar Data.txt"
+		inputFileObject = open(inputFile, 'r')
 		return json.load(inputFileObject)
 		inputFileObject.close()
 Setup()
@@ -64,7 +68,7 @@ def ButtonSetup():
 	add = Button(pygame.image.load("add.png"), False, "add", 85)
 ButtonSetup()
 
-class AddMenu(Button):
+class AddMenu(Button): ##This class sets up the buttons that open up the input fields
 	def __init__(self, image, inputID, isSelected, commonName, field, displayed):
 		self.image = image
 		self.id = inputID
@@ -144,10 +148,9 @@ def submit(): ##On enter, appends currentNumber to storedNumbers and dumps it to
 	global storedNumbers
 	currentNumber = getCurrentNumber()
 	currentDate = str(datetime.datetime.now())
-	# if len(currentNumber) >= 1:
-		# storedNumbers.append([currentNumber, currentDate])
+	if len(currentNumber) >= 1:
+		storedNumbers.append([currentNumber, currentDate])
 	Data.add(storedNumbers)
-	print(storedNumbers)
 	# inputDataObject = open("Blood Sugar Data.txt", 'r')
 	# print(json.load(inputDataObject))
 	# inputDataObject.close()
