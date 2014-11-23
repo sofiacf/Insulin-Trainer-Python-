@@ -149,17 +149,14 @@ def submit(): ##On enter, appends currentNumber to storedNumbers and dumps it to
 	currentNumber = getCurrentNumber()
 	currentDate = str(datetime.datetime.now())
 	if len(currentNumber) >= 1:
-		storedNumbers.append([currentNumber, currentDate])
+		def getInputType():
+			for button in MenuButtons:
+				if button.displayed == True:
+					inputType = button.name
+			return inputType
+		inputType = getInputType()
+		storedNumbers.append([currentNumber, currentDate, inputType])
 	Data.add(storedNumbers)
-	# inputDataObject = open("Blood Sugar Data.txt", 'r')
-	# print(json.load(inputDataObject))
-	# inputDataObject.close()
-	# return storedNumbers
-	def getInputType():
-		for button in MenuButtons:
-			if button.displayed == True:
-				inputType = button.name
-				return inputType
 
 sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
