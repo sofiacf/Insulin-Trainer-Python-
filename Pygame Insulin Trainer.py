@@ -7,7 +7,7 @@ pygame.init()
 def Setup():
 	global width, height, screen, key
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
-	global inputNumbers, storedValues
+	global currentNumber, inputNumbers, storedValues
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
@@ -65,8 +65,7 @@ def ButtonSetup():
 	cancel = Button(pygame.image.load("cancel.png"), False, "cancel", 100)
 	add = Button(pygame.image.load("add.png"), False, "add", 85)
 ButtonSetup()
-
-class AddMenu(Button): ##This class sets up the buttons that open up the input fields
+class AddMenu(Button): ##Buttons to display input fields
 	def __init__(self, image, inputID, isSelected, commonName, field, displayed):
 		self.image = image
 		self.id = inputID
@@ -84,22 +83,46 @@ def AddMenuSetup():
 	foodConsumptionButton = AddMenu((pygame.image.load("Food Consumption Button.png")), 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"), False)
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
-
 class Graph():
-	def __init__(self, size, position, color, content, contentpos):
-		self.size = size
+	def __init__(self, width, height, position, color, content, contentpos):
+		self.width = width
+		self.height = height
+		self.size = (self.width, self.height)
 		self.position = position
 		self.color = color
 		self.content = content
-		self.Surface = pygame.Surface(size)
-	
+		self.Surface = pygame.Surface(self.size)
+	class Range():
+		unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 100}
+		def __init__(unit, start, end, points):
+			self.unit = unitConversion['unit']
+			self.start = start
+			self.end = end
+			self.points = points
 	def displayGraph(graph):
 		screen.blit(graph.Surface, graph.position)
 		graph.Surface.fill(graph.color)
 		if graph.content:
 			displayGraphContent(graph.content)
+	def getPointsInRange(somerange):
+		somerange.points = []
+		for datapoint in storedValues:
+			if somerange.start < datapoint['InputTime'] < somerange.start + somerange.unit:
+				somerange.points.append(datapoint)
+		return somerange.points
+	def convertValueToPosition(somerange, targetgraph):
+		posPointDivisor = int(somerange.unit / targetgraph.width)
+		for datapoint in somerange.points:
+			coordInRange = domain - datapoint['InputTime']
+			xpos = int(coordInRange / posPointDivisor)
+			if datapoint['InputType'] == "Blood Sugar":
+				ypos = datapoint['InputValue']
+			else:
+				ypos = None
+			somerange.points.append(xpos, ypos)
+		return somerange.points
 
-myGraph = Graph((width-100, height-100), (50, 50), (0, 0, 0), None, None)
+myGraph = Graph(width-100, height-100, (50, 50), (0, 0, 0), None, None)
 
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
@@ -152,19 +175,20 @@ def displayInput(): ##Blits numbers as user types
 				if str(number.value) == inputNumber[0]:
 					screen.blit(number.image, inputNumber[1])
 def submit(): ##Creates storedValues dict and calls Data.add() on it
-	global storedValues
+	global storedValues, currentNumber
 	def getCurrentNumber():
+		global currentNumber
 		if len(currentNumber) < len(inputNumbers):
 			for inputnumber in inputNumbers:
 					currentNumber = currentNumber + inputnumber[0]
 		if len(currentNumber) >= 1:
 			currentNumber = str(currentNumber)
-		return currentNumber
+		return str(currentNumber)
 	currentNumber = getCurrentNumber()
 	def getCurrentTime():
 		currentTime = ""
 		now = datetime.now()
-		dateAttributes = [now.year, now.month, now.day, now.hour, now.minute, now.weekday()]
+		dateAttributes = [now.year, now.month, now.day, now.hour, now.minute]
 		for attribute in dateAttributes:
 			if len(str(attribute)) < 2:
 				attribute = "0%s" % str(attribute)
@@ -178,7 +202,7 @@ def submit(): ##Creates storedValues dict and calls Data.add() on it
 			return inputType
 	inputType = getInputType()
 	if len(currentNumber) >= 1:	
-		storedValues.append({'CurrentNumber': currentNumber, 'CurrentTime': currentTime, 'InputType': inputType})
+		storedValues.append({'InputValue': currentNumber, 'InputTime': currentTime, 'InputType': inputType})
 	Data.add(storedValues)
 
 clock = pygame.time.Clock()
@@ -191,7 +215,6 @@ while running:
 	isButtonPressed()
 	displayInputWindow()
 	displayInput()
-	getCurrentNumber()
 	pygame.display.flip()
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
