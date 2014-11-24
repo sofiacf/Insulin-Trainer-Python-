@@ -99,18 +99,18 @@ class Graph():
 			self.start = start
 			self.end = end
 			self.points = points
-	def displayGraph(graph):
+	def displayGraph(graph): ##Blits a graph as a surface
 		screen.blit(graph.Surface, graph.position)
 		graph.Surface.fill(graph.color)
 		if graph.content:
-			displayGraphContent(graph.content)
-	def getPointsInRange(somerange):
-		somerange.points = []
+			displayGraphContent(graph.content) ##THIS IS NOT REAL, NEEDS FIXING :)
+	def getPointsInRange(somerange): ##Sets points attribute for a range object
 		for datapoint in storedValues:
 			if somerange.start < datapoint['InputTime'] < somerange.start + somerange.unit:
 				somerange.points.append(datapoint)
 		return somerange.points
-	def convertValueToPosition(somerange, targetgraph):
+	def convertValueToPosition(somerange, targetgraph): ##Returns points as (xpos, ypos)
+		pointsToGraph = []
 		posPointDivisor = int(somerange.unit / targetgraph.width)
 		for datapoint in somerange.points:
 			coordInRange = domain - datapoint['InputTime']
@@ -119,8 +119,8 @@ class Graph():
 				ypos = datapoint['InputValue']
 			else:
 				ypos = None
-			somerange.points.append(xpos, ypos)
-		return somerange.points
+			pointsToGraph.append(xpos, ypos)
+		return pointsToGraph
 
 myGraph = Graph(width-100, height-100, (50, 50), (0, 0, 0), None, None)
 
@@ -178,9 +178,10 @@ def submit(): ##Creates storedValues dict and calls Data.add() on it
 	global storedValues, currentNumber
 	def getCurrentNumber():
 		global currentNumber
+		currentNumber = ""
 		if len(currentNumber) < len(inputNumbers):
 			for inputnumber in inputNumbers:
-					currentNumber = currentNumber + inputnumber[0]
+				currentNumber = currentNumber + inputnumber[0]
 		if len(currentNumber) >= 1:
 			currentNumber = str(currentNumber)
 		return str(currentNumber)

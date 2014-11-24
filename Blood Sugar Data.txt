@@ -1,0 +1,1 @@
+[{"InputTime": "201411232039", "InputType": "Insulin Dose", "InputValue": "5"}, {"InputTime": "201411232041", "InputType": "Food Consumption", "InputValue": "17"}, {"InputTime": "201411232041", "InputType": "Food Consumption", "InputValue": "17"}, {"InputTime": "201411232041", "InputType": "Food Consumption", "InputValue": "99"}]
