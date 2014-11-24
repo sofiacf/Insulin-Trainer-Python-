@@ -1,21 +1,17 @@
 import pygame
 import sys
 import json
-import datetime
+from datetime import datetime
 pygame.init()
 
 def Setup():
-	global width, height, screen, key, graph
+	global width, height, screen, key
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
-	global inputNumbers, storedNumbers
-	global now
+	global inputNumbers, storedValues
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("This is the python version of Insulin Trainer")
-	graph = pygame.Surface((width-100, height-100))
-	now = datetime.datetime.now()
-	print()
 	class Number():
 		def __init__(self, name, image, value):
 			self.name = name
@@ -32,13 +28,15 @@ def Setup():
 	eight = Number(pygame.K_8, pygame.image.load("8.png"), 8)
 	nine = Number(pygame.K_9, pygame.image.load("9.png"), 9)
 	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
-	if Data.update():
-		storedNumbers = [Data.update()]
-	else: storedNumbers = []
+	try:
+		storedValues = Data.update()
+	except ValueError:
+		storedValues = []
+
 	currentNumber = ""
 	inputNumbers = []
 class Data():
-	def __init__(self, date, inputtype, value):
+	def __init__(self, date, inputType, value):
 		self.date = date
 		self.type = inputType
 		self.value = value
@@ -87,9 +85,25 @@ def AddMenuSetup():
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
 
+class Graph():
+	def __init__(self, size, position, color, content, contentpos):
+		self.size = size
+		self.position = position
+		self.color = color
+		self.content = content
+		self.Surface = pygame.Surface(size)
+	
+	def displayGraph(graph):
+		screen.blit(graph.Surface, graph.position)
+		graph.Surface.fill(graph.color)
+		if graph.content:
+			displayGraphContent(graph.content)
+
+myGraph = Graph((width-100, height-100), (50, 50), (0, 0, 0), None, None)
+
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
-def displayMenuButtons(): ##This is always blitting the usual menu buttons.
+def displayMenuButtons(): ##Blits the usual menu buttons.
 	for button in MenuButtons:
 		screen.blit(button.image, button.pos)
 def isButtonPressed(): ##This needs fixing.
@@ -104,7 +118,7 @@ def isButtonPressed(): ##This needs fixing.
 			if inX and inY:
 				button.selected = True
 			else: button.selected = False
-def displayInputWindow(): ##If you clicked on a button, it'll show the input screen :D Unless the button was cancel.
+def displayInputWindow(): ##Shows the input screen until cancel.
 	global currentNumber
 	for button in MenuButtons:
 		if button.selected == True and cancel.selected == False:
@@ -114,9 +128,10 @@ def displayInputWindow(): ##If you clicked on a button, it'll show the input scr
 			button.displayed = True
 			return True
 		elif cancel.selected == True:
+			button.selected = False
 			currentNumber = []
 			return False
-def collectInput(event): ##Gets keydown events and adds numbers to inputNumbers array; calls submit on enter
+def collectInput(event): ##Adds numbers to inputNumbers; calls submit
 	global inputNumbers
 	numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 	if displayInputWindow():
@@ -130,43 +145,48 @@ def collectInput(event): ##Gets keydown events and adds numbers to inputNumbers 
 				submit()
 			else:
 				print("That is not acceptable input. Please try again with a /NUMBER/.")
-def displayInput(): ##Blits numbers as user types them -- as long as there's at least one...
+def displayInput(): ##Blits numbers as user types
 	if displayInputWindow() and len(inputNumbers) > 0:  
 		for number in numbers:
 			for inputNumber in inputNumbers:
 				if str(number.value) == inputNumber[0]:
 					screen.blit(number.image, inputNumber[1])
-def getCurrentNumber(): ##Gets inputNumbers array from submit and returns it as string 'currentNumber"
-	currentNumber = ""
-	if len(currentNumber) < len(inputNumbers):
-		for inputnumber in inputNumbers:
-				currentNumber = currentNumber + inputnumber[0]
-	if len(currentNumber) >= 1:
-		currentNumber = str(currentNumber)
-	return currentNumber
-def submit(): ##On enter, appends currentNumber to storedNumbers and dumps it to the .. file.. 
-	global storedNumbers
+def submit(): ##Creates storedValues dict and calls Data.add() on it
+	global storedValues
+	def getCurrentNumber():
+		if len(currentNumber) < len(inputNumbers):
+			for inputnumber in inputNumbers:
+					currentNumber = currentNumber + inputnumber[0]
+		if len(currentNumber) >= 1:
+			currentNumber = str(currentNumber)
+		return currentNumber
 	currentNumber = getCurrentNumber()
-	currentDate = str(datetime.datetime.now())
-	if len(currentNumber) >= 1:
-		def getInputType():
+	def getCurrentTime():
+		currentTime = ""
+		now = datetime.now()
+		dateAttributes = [now.year, now.month, now.day, now.hour, now.minute, now.weekday()]
+		for attribute in dateAttributes:
+			if len(str(attribute)) < 2:
+				attribute = "0%s" % str(attribute)
+			currentTime = currentTime + str(attribute)
+		return currentTime
+	currentTime = getCurrentTime()
+	def getInputType():
 			for button in MenuButtons:
 				if button.displayed == True:
 					inputType = button.name
 			return inputType
-		inputType = getInputType()
-		storedNumbers.append([currentNumber, currentDate, inputType])
-	Data.add(storedNumbers)
+	inputType = getInputType()
+	if len(currentNumber) >= 1:	
+		storedValues.append({'CurrentNumber': currentNumber, 'CurrentTime': currentTime, 'InputType': inputType})
+	Data.add(storedValues)
 
-sampleImage = pygame.image.load("Sample Image.jpg")
 clock = pygame.time.Clock()
 running = True
 while running:
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
-	screen.blit(graph, (50, 50))
-	graph.fill((0,0,0))
-	graph.blit(sampleImage, (0,0))
+	Graph.displayGraph(myGraph)
 	displayMenuButtons()
 	isButtonPressed()
 	displayInputWindow()

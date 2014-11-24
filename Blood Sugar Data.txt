@@ -1,0 +1,1 @@
+[{"CurrentTime": "20141123171306", "InputType": "Blood Sugar", "CurrentNumber": "88"}, {"CurrentTime": "20141123171406", "InputType": "Insulin Dose", "CurrentNumber": "2"}, {"CurrentTime": "20141123171406", "InputType": "Food Consumption", "CurrentNumber": "456"}, {"CurrentTime": "20141123171406", "InputType": "Food Consumption", "CurrentNumber": "456"}]
