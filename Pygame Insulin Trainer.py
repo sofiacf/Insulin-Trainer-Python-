@@ -3,7 +3,6 @@ import sys
 import json
 from datetime import datetime
 pygame.init()
-
 def Setup():
 	global width, height, screen, key
 	global zero, one, two, three, four, five, six, seven, eight, nine, numbers
@@ -11,7 +10,7 @@ def Setup():
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
-	pygame.display.set_caption("This is the python version of Insulin Trainer")
+	pygame.display.set_caption("Insulin Trainer")
 	class Number():
 		def __init__(self, name, image, value):
 			self.name = name
@@ -51,7 +50,7 @@ class Data():
 		return json.load(inputFileObject)
 		inputFileObject.close()
 Setup()
-class Button():
+class Button(): ##Other control buttons
 	def __init__(self, image, isSelected, commonName, yOffset):
 		self.image = image
 		self.selected = isSelected
@@ -84,7 +83,7 @@ def AddMenuSetup():
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
 class Graph():
-	def __init__(self, width, height, position, color, content, contentpos):
+	def __init__(self, width, height, position, color, content):
 		self.width = width
 		self.height = height
 		self.size = (self.width, self.height)
@@ -92,37 +91,51 @@ class Graph():
 		self.color = color
 		self.content = content
 		self.Surface = pygame.Surface(self.size)
-	class Range():
-		unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 100}
-		def __init__(unit, start, end, points):
-			self.unit = unitConversion['unit']
+	class Range():	
+		def __init__(self, unit, start, points=[]):
+			unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 100}
+			self.unit = unit
+			self.convertedunit = unitConversion[unit]
 			self.start = start
-			self.end = end
 			self.points = points
 	def displayGraph(graph): ##Blits a graph as a surface
 		screen.blit(graph.Surface, graph.position)
-		graph.Surface.fill(graph.color)
-		if graph.content:
-			displayGraphContent(graph.content) ##THIS IS NOT REAL, NEEDS FIXING :)
-	def getPointsInRange(somerange): ##Sets points attribute for a range object
-		for datapoint in storedValues:
-			if somerange.start < datapoint['InputTime'] < somerange.start + somerange.unit:
-				somerange.points.append(datapoint)
-		return somerange.points
-	def convertValueToPosition(somerange, targetgraph): ##Returns points as (xpos, ypos)
-		pointsToGraph = []
-		posPointDivisor = int(somerange.unit / targetgraph.width)
-		for datapoint in somerange.points:
-			coordInRange = domain - datapoint['InputTime']
-			xpos = int(coordInRange / posPointDivisor)
-			if datapoint['InputType'] == "Blood Sugar":
-				ypos = datapoint['InputValue']
-			else:
-				ypos = None
-			pointsToGraph.append(xpos, ypos)
-		return pointsToGraph
+		graph.Surface.fill(graph.color)		
+		myrange = Graph.Range('day', 201411232039)
 
-myGraph = Graph(width-100, height-100, (50, 50), (0, 0, 0), None, None)
+		def getPointsInRange(somerange): ##Sets points attribute for a range object
+			somerange.points = []
+			for datapoint in storedValues:
+				if somerange.start < int(datapoint['InputTime']) < somerange.start + somerange.convertedunit:
+					somerange.points.append(datapoint)
+		def convertValueToPosition(somerange, graph): ##Returns list of dicts points as w/ type and pos
+			pointsToGraph = []
+			posPointDivisor = somerange.convertedunit / graph.width
+			xmax = somerange.start + somerange.convertedunit
+			for datapoint in somerange.points:
+				coordInRange = xmax - int(datapoint['InputTime'])
+				xpos = int(coordInRange / posPointDivisor)
+				if datapoint['InputType'] == "Blood Sugar":
+					ypos = 400 - int(datapoint['InputValue'])
+				else:
+					ypos = ()
+				pointsToGraph.append({'point type': datapoint['InputType'], 'position': (xpos, ypos)})
+				print(pointsToGraph)
+			return pointsToGraph
+		print(convertValueToPosition(myrange, myGraph)) 
+		inputSymbols = {"Blood Sugar": pygame.image.load("Blood Sugar Point.png"), "Insulin Dose" : pygame.image.load("Insulin Dose Point.png"), "Food Consumption": pygame.image.load("Food Consumption Point.png")}
+		def plotPoints(graph, points):
+			for point in points:
+				if point['point type'] == "Blood Sugar":
+					graph.blit(inputSymbols["Blood Sugar"], point['position'])
+
+		getPointsInRange(myrange)
+		convertValueToPosition(myrange, myGraph)
+		pointsToGraph = convertValueToPosition(myrange, myGraph)
+		print(pointsToGraph)
+		plotPoints(myGraph.Surface, pointsToGraph)
+
+myGraph = Graph(width-100, height-100, (50, 50), (0, 0, 0), None)
 
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel]
 
