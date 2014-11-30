@@ -1,10 +1,10 @@
 	The UI should present the main graph, with settings for different 
 lengths of time, and date selection in general.
 
-	In the upper right corner, there are three buttons:
+	<!-- In the upper right corner, there are three buttons:
 		-Enter blood sugar reading
 		-Enter insulin dose
-		-Enter carb consumption
+		-Enter carb consumption -->
 
 	When you press a button, a box appears with a text entry field, a 
 date selecter (with now option?), and some option buttons if applicable. The various boxes are customized for the type of input.

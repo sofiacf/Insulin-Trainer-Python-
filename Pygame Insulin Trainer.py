@@ -91,9 +91,10 @@ class Graph():
 		self.color = color
 		self.content = content
 		self.Surface = pygame.Surface(self.size)
+
 	class Range():	
 		def __init__(self, unit, start, points=[]):
-			unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 100}
+			unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 60}
 			self.unit = unit
 			self.convertedunit = unitConversion[unit]
 			self.start = start
@@ -101,7 +102,7 @@ class Graph():
 	def displayGraph(graph): ##Blits a graph as a surface
 		screen.blit(graph.Surface, graph.position)
 		graph.Surface.fill(graph.color)		
-		myrange = Graph.Range('day', 201411232039)
+		myrange = Graph.Range('hour', 201411232000)
 
 		def getPointsInRange(somerange): ##Sets points attribute for a range object
 			somerange.points = []
@@ -109,31 +110,45 @@ class Graph():
 				if somerange.start < int(datapoint['InputTime']) < somerange.start + somerange.convertedunit:
 					somerange.points.append(datapoint)
 		def convertValueToPosition(somerange, graph): ##Returns list of dicts points as w/ type and pos
+			heightConverter = 1.6
 			pointsToGraph = []
 			posPointDivisor = somerange.convertedunit / graph.width
 			xmax = somerange.start + somerange.convertedunit
 			for datapoint in somerange.points:
-				coordInRange = xmax - int(datapoint['InputTime'])
-				xpos = int(coordInRange / posPointDivisor)
+				xpos = int((((xmax - int(datapoint['InputTime'])) / somerange.convertedunit) * graph.width))
 				if datapoint['InputType'] == "Blood Sugar":
-					ypos = 400 - int(datapoint['InputValue'])
+					ypos = int((int(datapoint['InputValue']) * heightConverter))
 				else:
 					ypos = ()
 				pointsToGraph.append({'point type': datapoint['InputType'], 'position': (xpos, ypos)})
-				print(pointsToGraph)
 			return pointsToGraph
-		print(convertValueToPosition(myrange, myGraph)) 
+			print(len(pointsToGraph))
+
 		inputSymbols = {"Blood Sugar": pygame.image.load("Blood Sugar Point.png"), "Insulin Dose" : pygame.image.load("Insulin Dose Point.png"), "Food Consumption": pygame.image.load("Food Consumption Point.png")}
-		def plotPoints(graph, points):
+		pointCenterCorrector = (pygame.Surface.get_size(pygame.image.load("Blood Sugar Point.png"))[0]/2)
+
+		def convertComplexPointDictToList(pointDict): ##Converts point dict to list of draw.aalines-compatible tuples
+			drawablePointList = []
+			for pointListing in pointDict:
+				newtuple = (pointListing['position'])
+				drawablePointList.append(newtuple)
+			return drawablePointList
+		def plotPoints(graph, points): ##Blits points from pointsToGraph, pos corrected to center; draws connecting lines
+			pygame.draw.aalines(graph, (250, 0, 0), False, convertComplexPointDictToList(points))
 			for point in points:
 				if point['point type'] == "Blood Sugar":
-					graph.blit(inputSymbols["Blood Sugar"], point['position'])
+					graph.blit(inputSymbols["Blood Sugar"], ((point['position'][0] - pointCenterCorrector), point['position'][1] - pointCenterCorrector))
 
 		getPointsInRange(myrange)
 		convertValueToPosition(myrange, myGraph)
 		pointsToGraph = convertValueToPosition(myrange, myGraph)
-		print(pointsToGraph)
 		plotPoints(myGraph.Surface, pointsToGraph)
+		drawablePointList = convertComplexPointDictToList(pointsToGraph)
+
+		def showGraphRange():
+			print(myrange.unit, myrange.start)
+
+		showGraphRange()
 
 myGraph = Graph(width-100, height-100, (50, 50), (0, 0, 0), None)
 
