@@ -13,22 +13,21 @@ def Setup():
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("Insulin Trainer")
 	class Number():
-		def __init__(self, name, key, image, value):
+		def __init__(self, name, image, value):
 			self.name = name
-			self.key = key
 			self.image = image
 			self.value = value
-	numberNames = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
-	numberKeys = [pygame.K_0, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
-	def setupNumbers():
-		numbers = []; i = 0
-		for number in numberNames:
-			number = Number(number, numberKeys[i], pygame.image.load("%s.png" %i), i)
-			numbers.append(number)
-			i += 1
-		return numbers
-	numbers = setupNumbers()
-
+	zero = Number(pygame.K_0, pygame.image.load("0.png"), 0)
+	one = Number(pygame.K_1, pygame.image.load("1.png"), 1)
+	two = Number(pygame.K_2, pygame.image.load("2.png"), 2)
+	three = Number(pygame.K_3, pygame.image.load("3.png"), 3)
+	four = Number(pygame.K_4, pygame.image.load("4.png"), 4)
+	five = Number(pygame.K_5, pygame.image.load("5.png"), 5)
+	six = Number(pygame.K_6, pygame.image.load("6.png"), 6)
+	seven = Number(pygame.K_7, pygame.image.load("7.png"), 7)
+	eight = Number(pygame.K_8, pygame.image.load("8.png"), 8)
+	nine = Number(pygame.K_9, pygame.image.load("9.png"), 9)
+	numbers = [zero, one, two, three, four, five, six, seven, eight, nine]
 	try:
 		storedValues = Data.update()
 	except ValueError:
@@ -55,45 +54,37 @@ class Data():
 		inputFileObject.close()
 Setup()
 class Button(): ##Other control buttons
-	def __init__(self, image, isSelected, commonName, position):
-		self.image = pygame.image.load(image)
+	def __init__(self, image, isSelected, commonName, yOffset):
+		self.image = image
 		self.selected = isSelected
 		self.name = commonName
-		self.pos = position
+		self.yOffset = yOffset
+		self.pos = (width - pygame.Surface.get_size(self.image)[0], yOffset)
 		self.size = pygame.Surface.get_size(self.image)
-##POS FOR CANCEL AND ADD: self.pos = (width - self.size[0], yOffset)
-
-class AddMenu():
-	def __init__(self):
-		bloodSugarButton = Button("Blood Sugar Button.png", False, "Blood Sugar", None)
-		insulinDoseButton = Button("Insulin Dose Button.png", False, "Insulin Dose", None)
-		foodConsumptionButton = Button("Food Consumption Button.png", False, "Food Consumption", None)
-		self.menuButtons = [bloodSugarButton, insulinDoseButton, foodConsumptionButton]
-		getButtonPosition(self.menuButtons)
-	def getButtonPosition(buttonSet):
-		i = 0
-		for button in buttonSet:
-			button.position = (width - button.size[0], button.size[1] * i)
-			i += 1
-	def displayMenuButtons(self): ##Blits the usual menu buttons.
-		for button in self.menuButtons:
-			screen.blit(button.image, button.pos)
-
-menuButtons = [bloodSugarButton, insulinDoseButton, foodConsumptionButton]
-otherButtons = [cancel, add]
-class InputField():
-	def __init__(self, image, pairedButton):
-		self.image = pygame.image.load(image)
+		self.type = Button
+def ButtonSetup():
+	global cancel, add
+	cancel = Button(pygame.image.load("cancel.png"), False, "cancel", 100)
+	add = Button(pygame.image.load("add.png"), False, "add", 85)
+ButtonSetup()
+class AddMenu(Button): ##Buttons to display input fields
+	def __init__(self, image, inputID, isSelected, commonName, field, displayed):
+		self.image = image
+		self.id = inputID
+		self.selected = isSelected
+		self.name = commonName
+		self.pos = (width - pygame.Surface.get_size(self.image)[0], pygame.Surface.get_size(self.image)[1] * self.id)
 		self.size = pygame.Surface.get_size(self.image)
-		self.pos = (width - self.size[0], 0)
-		self.button = pairedButton
-def inputFieldSetup():
-	global bloodSugarField, insulinDoseField, foodConsumptionField
-	bloodSugarField = InputField("Blood Sugar Input Field.png", bloodSugarButton)
-	insulinDoseField = InputField("Insulin Dose Input Field.png", insulinDoseButton)
-	foodConsumptionField = InputField("Food Consumption Input Field.png", foodConsumptionButton)
-inputFieldSetup()
-inputFields = [bloodSugarField, insulinDoseField, foodConsumptionField]
+		self.field = field
+		self.fieldpos = (width - pygame.Surface.get_size(self.field)[0], 0)
+		self.displayed = displayed
+def AddMenuSetup():
+	global bloodSugarButton, insulinDoseButton, foodConsumptionButton, MenuButtons, allTheButtons
+	bloodSugarButton = AddMenu((pygame.image.load("Blood Sugar Button.png")), 0, False, "Blood Sugar", pygame.image.load("Blood Sugar Input Field.png"), False)
+	insulinDoseButton = AddMenu((pygame.image.load("Insulin Dose Button.png")), 1, False, "Insulin Dose", pygame.image.load("Insulin Dose Input Field.png"), False)
+	foodConsumptionButton = AddMenu((pygame.image.load("Food Consumption Button.png")), 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"), False)
+	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
+AddMenuSetup()
 class Graph():
 	def __init__(self, width, height, position, color, content):
 		self.width = width
@@ -113,8 +104,6 @@ class Graph():
 			self.start = start
 			self.points = points
 	def graphControl(self):
-		# def __init__(self):
-		# 	self.placeHolderRangeButton = RangeButton(pygame.image.load("Hour.png"), 'hour')
 		global placeHolderRangeButton, rangeHasRecentlyBeenChanged
 		class RangeButton():
 			def __init__(self, image, rangeattributematcher, isSelected = False):
@@ -135,7 +124,7 @@ class Graph():
 			placeHolderRangeButton
 		except NameError:
 			placeHolderRangeButton = RangeButton(pygame.image.load("Hour.png"), 'hour') ##For isSelected
-		def displayRangeControl(self):
+		def displayRangeControl():
 			for button in rangeButtons:
 				if self.myrange.unit == button.rangeattributematcher:
 					screen.blit(button.image, (button.xpos, button.ypos))
@@ -148,6 +137,7 @@ class Graph():
 						self.myrange.unit = possibleUnits[i + 1]
 					else: self.myrange.unit = possibleUnits[0]
 				else: i += 1
+
 		displayRangeControl()
 		if placeHolderRangeButton.selected == True and rangeHasRecentlyBeenChanged == False:
 			rangeHasRecentlyBeenChanged = True
@@ -194,8 +184,14 @@ class Graph():
 		pointsToGraph = convertValueToPosition()
 		plotPoints(pointsToGraph)
 		drawablePointList = convertComplexPointDictToList(pointsToGraph)
+
 myGraph = Graph(width - 100, height - 100, (50, 50), (0, 0, 0), None)
-# allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel] ##, placeHolderRangeButton]
+myGraph.graphControl()
+allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel, placeHolderRangeButton]
+
+def displayMenuButtons(): ##Blits the usual menu buttons.
+	for button in MenuButtons:
+		screen.blit(button.image, button.pos)
 def isButtonPressed():
 	global aValueHasBeenSubmittedRecently, rangeHasRecentlyBeenChanged
 	if pygame.mouse.get_pressed()[0] == True:
@@ -216,7 +212,7 @@ def isButtonPressed():
 	else: aValueHasBeenSubmittedRecently = False; rangeHasRecentlyBeenChanged = False
 def displayInputWindow(): ##Shows the input screen until cancel.
 	global currentNumber
-	for button in menuButtons:
+	for button in MenuButtons:
 		if button.selected == True and cancel.selected == False:
 			screen.blit(button.field, button.fieldpos)
 			screen.blit(cancel.image, cancel.pos)
@@ -241,7 +237,7 @@ def collectInput(event): ##Adds numbers to inputNumbers; calls submit
 				submit()
 			else:
 				print("That is not acceptable input. Please try again with a /NUMBER/.")
-def displayInput(): ##Blits numbers as user types, COULD MAYBE BE BETTER. NEXT THING TO LOOK AT
+def displayInput(): ##Blits numbers as user types
 	if displayInputWindow() and len(inputNumbers) > 0:  
 		for number in numbers:
 			for inputNumber in inputNumbers:
@@ -283,7 +279,7 @@ while running:
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
 	myGraph.displayGraph()
-	# myGraph.graphControl()
+	myGraph.graphControl()
 	displayMenuButtons()
 	isButtonPressed()
 	displayInputWindow()
