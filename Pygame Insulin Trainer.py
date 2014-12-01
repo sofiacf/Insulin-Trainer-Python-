@@ -4,27 +4,23 @@ import json
 from datetime import datetime
 pygame.init()
 def Setup():
-	global width, height, screen, key
-	global aValueHasBeenSubmittedRecently
+	global width, height, screen, key, aValueHasBeenSubmittedRecently
 	global numbers, currentNumber, inputNumbers, storedValues
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("Insulin Trainer")
 	class Number():
-		def __init__(self, key, value):
-			self.key = key
+		def __init__(self, value):
 			self.image = pygame.image.load("%s.png" %value)
 			self.value = value
-	numberList = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-	numberKeys = [pygame.K_0, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
-	def setupNumbers():
-		numbers = []
-		for number in numberList:
-			number = Number(numberKeys[number], number)
-			numbers.append(number)
-		return numbers
-	numbers = setupNumbers()
+		def setupNumbers():
+			numbers = []
+			for number in range(10):
+				number = Number(number)
+				numbers.append(number)
+			return numbers
+	numbers = Number.setupNumbers()
 	try:
 		storedValues = Data.update()
 	except ValueError:
@@ -49,18 +45,18 @@ class Data():
 		inputFileObject.close()
 Setup()
 class Button(): ##Other control buttons
-	def __init__(self, image, isSelected, commonName, yOffset):
+	def __init__(self, image, isSelected, commonName, position):
 		self.image = pygame.image.load(image)
 		self.selected = isSelected
 		self.name = commonName
-		self.yOffset = yOffset
 		self.size = pygame.Surface.get_size(self.image)
-		self.pos = (width - self.size[0], yOffset)
-		self.type = Button
+		self.pos = position
 def ButtonSetup():
 	global cancel, add
 	cancel = Button("cancel.png", False, "cancel", 100)
+	cancel.pos = (width - cancel.size[0], 100)
 	add = Button("add.png", False, "add", 85)
+	add.pos = (width - add.size[0], 85)
 ButtonSetup()
 class AddMenu(Button): ##Buttons to display input fields
 	def __init__(self, image, inputID, isSelected, commonName, field, displayed):

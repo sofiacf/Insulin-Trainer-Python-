@@ -5,28 +5,23 @@ from datetime import datetime
 pygame.init()
 def Setup():
 	global width, height, screen, key, numbers
-	global aValueHasBeenSubmittedRecently
-	global currentNumber, inputNumbers, storedValues
+	global currentNumber, inputNumbers, storedValues, aValueHasBeenSubmittedRecently
 	(width, height) = (500, 500)
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("Insulin Trainer")
 	class Number():
-		def __init__(self, name, key, image, value):
-			self.name = name
-			self.key = key
-			self.image = image
+		def __init__(self, value):
+			self.image = pygame.image.load("%s.png" %value)
 			self.value = value
-	numberNames = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
-	numberKeys = [pygame.K_0, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
-	def setupNumbers():
-		numbers = []; i = 0
-		for number in numberNames:
-			number = Number(number, numberKeys[i], pygame.image.load("%s.png" %i), i)
-			numbers.append(number)
-			i += 1
-		return numbers
-	numbers = setupNumbers()
+		def setupNumbers():
+			numbers = []
+			for number in range(10):
+				number = Number(number)
+				numbers.append(number)
+			return numbers
+	numbers = Number.setupNumbers()
+
 	try:
 		storedValues = Data.update()
 	except ValueError:
@@ -59,7 +54,6 @@ class Button(): ##Other control buttons
 		self.name = commonName
 		self.pos = position
 		self.size = pygame.Surface.get_size(self.image)
-##POS FOR CANCEL AND ADD: self.pos = (width - self.size[0], yOffset)
 
 class AddMenu():
 	def __init__(self):
@@ -102,6 +96,7 @@ class Graph():
 		self.content = content
 		self.Surface = pygame.Surface(self.size)
 		self.myrange = Graph.Range('hour', 201411232000)
+		print("constructing a graph")
 	class Range():
 		def __init__(self, unit, start, points=[]):
 			unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 60}
@@ -115,7 +110,7 @@ class Graph():
 		global placeHolderRangeButton, rangeHasRecentlyBeenChanged
 		class RangeButton():
 			def __init__(self, image, rangeattributematcher, isSelected = False):
-				self.image = pygame.image.load(image)
+				self.image = image
 				self.size = pygame.Surface.get_size(image)
 				self.width = self.size[0]
 				self.height = self.size[1]
@@ -124,11 +119,10 @@ class Graph():
 				self.ypos = 50 - self.height
 				self.pos = (self.xpos, self.ypos)
 				self.selected = isSelected
-		hour = RangeButton("Hour.png", 'hour')
-		day = RangeButton("Day.png", 'day')
-		month = RangeButton("Month.png", 'month')
+		hour = RangeButton(pygame.image.load("Hour.png"), 'hour')
+		day = RangeButton(pygame.image.load("Day.png"), 'day')
+		month = RangeButton(pygame.image.load("Month.png"), 'month')
 		rangeButtons = [hour, day, month]
-
 		try:
 			placeHolderRangeButton
 		except NameError:
@@ -138,7 +132,8 @@ class Graph():
 				if self.myrange.unit == button.rangeattributematcher:
 					screen.blit(button.image, (button.xpos, button.ypos))
 		def setRange():
-			possibleUnits = ['hour', 'day', 'month']; i = 0
+			possibleUnits = ['hour', 'day', 'month']
+			i = 0
 			for possibleunit in possibleUnits:
 				if self.myrange.unit == possibleunit:
 					if i < len(possibleUnits) - 1:
@@ -280,7 +275,7 @@ while running:
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
 	myGraph.displayGraph()
-	myGraph.graphControl()
+	# myGraph.graphControl()
 	displayMenuButtons()
 	isButtonPressed()
 	displayInputWindow()
