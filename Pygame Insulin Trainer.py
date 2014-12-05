@@ -10,6 +10,11 @@ def Setup():
 	screen = pygame.display.set_mode((width, height))
 	key = pygame.key.get_pressed()
 	pygame.display.set_caption("Insulin Trainer")
+	try:
+		storedValues = Data.update()
+	except ValueError:
+		storedValues = []
+	aValueHasBeenSubmittedRecently = False
 	class Number():
 		def __init__(self, value):
 			self.image = pygame.image.load("%s.png" %value)
@@ -21,28 +26,33 @@ def Setup():
 				numbers.append(number)
 			return numbers
 	numbers = Number.setupNumbers()
-	try:
-		storedValues = Data.update()
-	except ValueError:
-		storedValues = []
-	aValueHasBeenSubmittedRecently = False
 	currentNumber = ""
 	inputNumbers = []
 class Data():
-	def __init__(self, date, inputType, value):
-		self.date = date
-		self.type = inputType
-		self.value = value
-	def add(value):
+	def add():
+		dataToAdd = []
+		for datum in storedValues:
+			datumDict = {"InputTime": datum.time, "InputValue": datum.value, "InputType": datum.type}
+			dataToAdd.append(datumDict)
 		inputFile = "Blood Sugar Data.txt"
 		inputFileObject = open(inputFile, 'w')
-		json.dump(value, inputFileObject)
+		json.dump(dataToAdd, inputFileObject)
 		inputFileObject.close()
 	def update():
 		inputFile = "Blood Sugar Data.txt"
 		inputFileObject = open(inputFile, 'r')
-		return json.load(inputFileObject)
+		dataDictionary = json.load(inputFileObject)
+		storedValues = []
+		for datum in dataDictionary:
+			datum = Data.Datum(datum)
+			storedValues.append(datum)
 		inputFileObject.close()
+		return storedValues
+	class Datum():
+		def __init__(self, dictionary):
+			self.time = int(dictionary['InputTime'])
+			self.value = int(dictionary['InputValue'])
+			self.type = dictionary['InputType']
 Setup()
 class Button(): ##Other control buttons
 	def __init__(self, image, isSelected, commonName, position):
@@ -85,10 +95,11 @@ class Graph():
 		self.color = color
 		self.content = content
 		self.Surface = pygame.Surface(self.size)
-		self.myrange = Graph.Range('hour', 201411232000)
+		self.myrange = Graph.Range('month', 201411000000)
 	class Range():
-		def __init__(self, unit, start, points=[]):
-			unitConversion = {'year': 100000000, 'month': 1000000, 'day': 10000, 'hour': 60}
+		global unitConversion
+		unitConversion = {'year': 12000000, 'month': 310000, 'day': 2400, 'hour': 60}
+		def __init__(self, unit, start, points=[]):	
 			self.unit = unit
 			self.convertedunit = unitConversion[unit]
 			self.start = start
@@ -118,64 +129,67 @@ class Graph():
 			for button in rangeButtons:
 				if self.myrange.unit == button.rangeattributematcher:
 					screen.blit(button.image, (button.xpos, button.ypos))
-		def setRange():
+		def setRangeUnit():
 			possibleUnits = ['hour', 'day', 'month']; i = 0
 			for possibleunit in possibleUnits:
 				if self.myrange.unit == possibleunit:
 					if i < len(possibleUnits) - 1:
 						self.myrange.unit = possibleUnits[i + 1]
-					else: self.myrange.unit = possibleUnits[0]
+						self.myrange.convertedunit = unitConversion[self.myrange.unit]
+					else:
+						self.myrange.unit = possibleUnits[0]
+						self.myrange.convertedunit = unitConversion[self.myrange.unit]
 				else: i += 1
 		displayRangeControl()
 		if placeHolderRangeButton.selected == True and rangeHasRecentlyBeenChanged == False:
 			rangeHasRecentlyBeenChanged = True
-			setRange()
+			setRangeUnit()
 			placeHolderRangeButton.selected = False
 	def displayGraph(self): ##Blits a graph, and does a shit ton of stuff with ranges and points lulz
 		screen.blit(self.Surface, self.position)
 		self.Surface.fill(self.color)
 		def getPointsInRange(): ##Sets points attribute for a range object
 			self.myrange.points = []
-			for datapoint in storedValues:
-				if self.myrange.start < int(datapoint['InputTime']) < self.myrange.start + self.myrange.convertedunit:
-					self.myrange.points.append(datapoint)
+			for datum in storedValues:
+				if self.myrange.start < datum.time < self.myrange.start + self.myrange.convertedunit:
+					self.myrange.points.append(datum)
 		def convertValueToPosition(): ##Returns list of dicts points as w/ type and pos
 			heightConverter = 1.6
-			pointsToGraph = []
 			posPointDivisor = self.myrange.convertedunit / self.width
 			xmax = self.myrange.start + self.myrange.convertedunit
-			for datapoint in self.myrange.points:
-				xpos = int((((xmax - int(datapoint['InputTime'])) / self.myrange.convertedunit) * self.width))
-				if datapoint['InputType'] == "Blood Sugar":
-					ypos = int((int(datapoint['InputValue']) * heightConverter))
+			for datum in self.myrange.points:
+				xpos = int((((xmax - datum.time) / self.myrange.convertedunit) * self.width))
+				if datum.type == "Blood Sugar":
+					ypos = int(datum.value * heightConverter)
 				else:
 					ypos = (50)
-				pointsToGraph.append({'point type': datapoint['InputType'], 'position': (xpos, ypos)})
-			return pointsToGraph
-
+				datum.position = (xpos, ypos)
 		inputSymbols = {"Blood Sugar": pygame.image.load("Blood Sugar Point.png"), "Insulin Dose" : pygame.image.load("Insulin Dose Point.png"), "Food Consumption": pygame.image.load("Food Consumption Point.png")}
 		pointCenterCorrector = (pygame.Surface.get_size(pygame.image.load("Blood Sugar Point.png"))[0]/2)
-
-		def convertComplexPointDictToList(pointDict): ##Converts point dict to list of draw.aalines-compatible tuples
-			drawablePointList = []
-			for pointListing in pointDict:
-				newtuple = (pointListing['position'])
-				drawablePointList.append(newtuple)
-			return drawablePointList
-		def plotPoints(points): ##Blits points from pointsToGraph, pos corrected to center; draws connecting lines
-			pygame.draw.aalines(self.Surface, (250, 0, 0), False, convertComplexPointDictToList(points))
-			for point in points:
-				if point['point type'] == "Blood Sugar":
-					self.Surface.blit(inputSymbols["Blood Sugar"], ((point['position'][0] - pointCenterCorrector), point['position'][1] - pointCenterCorrector))
+		def plotPoints(): ##Blits points from pointsToGraph, pos corrected to center; draws connecting lines
+			lineDrawingList = []
+			for datum in self.myrange.points:
+				if datum.type == "Blood Sugar":
+					lineDrawingList.append(datum.position)
+			lineDrawingList = (sorted(lineDrawingList))
+			pygame.draw.aalines(self.Surface, (250, 0, 0), False, lineDrawingList)
+			for datum in self.myrange.points:
+				if datum.type == "Blood Sugar":
+					self.Surface.blit(inputSymbols["Blood Sugar"], ((datum.position[0] - pointCenterCorrector), datum.position[1] - pointCenterCorrector))
 		getPointsInRange()
 		convertValueToPosition()
-		pointsToGraph = convertValueToPosition()
-		plotPoints(pointsToGraph)
-		drawablePointList = convertComplexPointDictToList(pointsToGraph)
+		try: plotPoints()
+		except: ValueError
 myGraph = Graph(width - 100, height - 100, (50, 50), (0, 0, 0), None)
 myGraph.graphControl()
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel, placeHolderRangeButton]
 
+def displayInput():
+	if displayInputWindow() and len(inputNumbers) > 0:
+		for number in numbers:
+			for inputnumber in inputNumbers:
+				if str(number.value) == inputNumber[0]:
+					screen.blit(number.image, (len(inputNumbers) * 10, 0))
 def displayMenuButtons(): ##Blits the usual menu buttons.
 	for button in MenuButtons:
 		screen.blit(button.image, button.pos)
@@ -198,7 +212,7 @@ def isButtonPressed():
 				add.selected = False
 	else: aValueHasBeenSubmittedRecently = False; rangeHasRecentlyBeenChanged = False
 def displayInputWindow(): ##Shows the input screen until cancel.
-	global currentNumber
+	global currentNumber, inputNumbers
 	for button in MenuButtons:
 		if button.selected == True and cancel.selected == False:
 			screen.blit(button.field, button.fieldpos)
@@ -206,22 +220,23 @@ def displayInputWindow(): ##Shows the input screen until cancel.
 			screen.blit(add.image, add.pos)
 			button.displayed = True
 			return True
-		elif cancel.selected == True:
+		elif cancel.selected == True or add.selected == True:
 			button.selected = False
 			currentNumber = []
+			inputNumbers = []
 			return False
 def collectInput(event): ##Adds numbers to inputNumbers; calls submit
 	global inputNumbers
-	numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 	if displayInputWindow():
 		if event.type == pygame.KEYDOWN:
-			if event.unicode in numbers and len(inputNumbers) < 3:
-				targetIndex = len(inputNumbers)
-				inputNumbers.append([event.unicode, (targetIndex * 10, 0)])
-			elif event.key == pygame.K_BACKSPACE and len(inputNumbers) != 0:
-				inputNumbers.pop()
+			if event.key == pygame.K_BACKSPACE:
+				if len(inputNumbers) != 0:
+					inputNumbers.pop()
 			elif event.key == pygame.K_RETURN:
 				submit()
+				inputNumbers = []
+			elif int(event.unicode) in range(10) and len(inputNumbers) < 3:
+				inputNumbers.append([event.unicode, (len(inputNumbers)*10, 0)])
 			else:
 				print("That is not acceptable input. Please try again with a /NUMBER/.")
 def displayInput(): ##Blits numbers as user types
@@ -232,7 +247,7 @@ def displayInput(): ##Blits numbers as user types
 					screen.blit(number.image, inputNumber[1])
 def submit(): ##Creates storedValues dict and calls Data.add() on it
 	global storedValues, currentNumber
-	def getCurrentNumber():
+	def getCurrentNumber(): ##Strips position from inputNumbers
 		currentNumber = ""
 		if len(currentNumber) < len(inputNumbers):
 			for inputnumber in inputNumbers:
@@ -257,9 +272,11 @@ def submit(): ##Creates storedValues dict and calls Data.add() on it
 					inputType = button.name
 			return inputType
 	inputType = getInputType()
-	if len(currentNumber) >= 1:	
-		storedValues.append({'InputValue': currentNumber, 'InputTime': currentTime, 'InputType': inputType})
-	Data.add(storedValues)
+	add.selected = True
+	if len(currentNumber) != 0:
+		newDatum = {'InputValue': currentNumber, 'InputTime': currentTime, 'InputType': inputType}
+		storedValues.append(Data.Datum(newDatum))
+	Data.add()
 clock = pygame.time.Clock()
 running = True
 while running:
