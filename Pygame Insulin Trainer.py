@@ -22,8 +22,7 @@ def Setup():
 		def setupNumbers():
 			numbers = []
 			for number in range(10):
-				number = Number(number)
-				numbers.append(number)
+				numbers.append(Number(number))
 			return numbers
 	numbers = Number.setupNumbers()
 	currentNumber = ""
@@ -32,7 +31,7 @@ class Data():
 	def add():
 		dataToAdd = []
 		for datum in storedValues:
-			datumDict = {"InputTime": datum.time, "InputValue": datum.value, "InputType": datum.type}
+			datumDict = {"Time": datum.time, "Value": datum.value, "Type": datum.type}
 			dataToAdd.append(datumDict)
 		inputFile = "Blood Sugar Data.txt"
 		inputFileObject = open(inputFile, 'w')
@@ -50,9 +49,9 @@ class Data():
 		return storedValues
 	class Datum():
 		def __init__(self, dictionary):
-			self.time = int(dictionary['InputTime'])
-			self.value = int(dictionary['InputValue'])
-			self.type = dictionary['InputType']
+			self.time = int(dictionary["Time"])
+			self.value = int(dictionary["Value"])
+			self.type = dictionary["Type"]
 Setup()
 class Button(): ##Other control buttons
 	def __init__(self, image, isSelected, commonName, position):
@@ -87,15 +86,14 @@ def AddMenuSetup():
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
 class Graph():
-	def __init__(self, width, height, position, color, content):
+	def __init__(self, width, height, position, color):
 		self.width = width
 		self.height = height
 		self.size = (self.width, self.height)
 		self.position = position
 		self.color = color
-		self.content = content
 		self.Surface = pygame.Surface(self.size)
-		self.myrange = Graph.Range('month', 201411000000)
+		self.myrange = Graph.Range('month', 201412010000)
 	class Range():
 		global unitConversion
 		unitConversion = {'year': 12000000, 'month': 310000, 'day': 2400, 'hour': 60}
@@ -105,7 +103,7 @@ class Graph():
 			self.start = start
 			self.points = points
 	def graphControl(self):
-		global placeHolderRangeButton, rangeHasRecentlyBeenChanged
+		global placeHolderRangeButton, rangeHasRecentlyBeenChanged, rightArrow, leftArrow
 		class RangeButton():
 			def __init__(self, image, rangeattributematcher, isSelected = False):
 				self.image = pygame.image.load("%s" % image)
@@ -113,7 +111,7 @@ class Graph():
 				self.width = self.size[0]
 				self.height = self.size[1]
 				self.rangeattributematcher = rangeattributematcher
-				self.xpos = (width / 2) - (self.width / 2)
+				self.xpos = (width / 2) - (self.width / 2) ##Center of the screen on x axis
 				self.ypos = 50 - self.height
 				self.pos = (self.xpos, self.ypos)
 				self.selected = isSelected
@@ -121,14 +119,21 @@ class Graph():
 		day = RangeButton("Day.png", 'day')
 		month = RangeButton("Month.png", 'month')
 		rangeButtons = [hour, day, month]
+		leftArrow = RangeButton("LeftArrow.png", -1)
+		rightArrow = RangeButton("RightArrow.png", 1)
+		navigationButtons = [leftArrow, rightArrow]
 		try:
 			placeHolderRangeButton
 		except NameError:
 			placeHolderRangeButton = RangeButton("Hour.png", 'hour') ##For isSelected
+		leftArrow.pos = (placeHolderRangeButton.xpos - leftArrow.width, placeHolderRangeButton.ypos)
+		rightArrow.pos = (placeHolderRangeButton.xpos + placeHolderRangeButton.width, placeHolderRangeButton.ypos)
 		def displayRangeControl():
 			for button in rangeButtons:
 				if self.myrange.unit == button.rangeattributematcher:
-					screen.blit(button.image, (button.xpos, button.ypos))
+					screen.blit(button.image, (button.pos))
+			for button in navigationButtons:
+				screen.blit(button.image, button.pos)
 		def setRangeUnit():
 			possibleUnits = ['hour', 'day', 'month']; i = 0
 			for possibleunit in possibleUnits:
@@ -140,7 +145,16 @@ class Graph():
 						self.myrange.unit = possibleUnits[0]
 						self.myrange.convertedunit = unitConversion[self.myrange.unit]
 				else: i += 1
+		def modifyRangeStart():
+			modificationIncrements = {'hour': 100, 'day': 10000, 'month': 1000000, 'year': 100000000}
+			for button in navigationButtons:
+				if button.selected:
+					for unit in modificationIncrements:
+						if self.myrange.unit == unit:
+							self.myrange.start += (unit*button.rangeattributematcher)
+							button.self = False
 		displayRangeControl()
+		modifyRangeStart()
 		if placeHolderRangeButton.selected == True and rangeHasRecentlyBeenChanged == False:
 			rangeHasRecentlyBeenChanged = True
 			setRangeUnit()
@@ -158,9 +172,9 @@ class Graph():
 			posPointDivisor = self.myrange.convertedunit / self.width
 			xmax = self.myrange.start + self.myrange.convertedunit
 			for datum in self.myrange.points:
-				xpos = int((((xmax - datum.time) / self.myrange.convertedunit) * self.width))
+				xpos = self.width - int((((xmax - datum.time) / self.myrange.convertedunit) * self.width))
 				if datum.type == "Blood Sugar":
-					ypos = int(datum.value * heightConverter)
+					ypos = self.height - int(datum.value * heightConverter)
 				else:
 					ypos = (50)
 				datum.position = (xpos, ypos)
@@ -180,10 +194,10 @@ class Graph():
 		convertValueToPosition()
 		try: plotPoints()
 		except: ValueError
-myGraph = Graph(width - 100, height - 100, (50, 50), (0, 0, 0), None)
+myGraph = Graph(width - 100, height - 100, (50, 50), (0, 0, 0))
 myGraph.graphControl()
-allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton, add, cancel, placeHolderRangeButton]
-
+allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton,
+					add, cancel, placeHolderRangeButton, rightArrow, leftArrow]
 def displayInput():
 	if displayInputWindow() and len(inputNumbers) > 0:
 		for number in numbers:
@@ -192,7 +206,7 @@ def displayInput():
 					screen.blit(number.image, (len(inputNumbers) * 10, 0))
 def displayMenuButtons(): ##Blits the usual menu buttons.
 	for button in MenuButtons:
-		screen.blit(button.image, button.pos)
+		screen.blit(button.image, button.pos)		 
 def isButtonPressed():
 	global aValueHasBeenSubmittedRecently, rangeHasRecentlyBeenChanged
 	if pygame.mouse.get_pressed()[0] == True:
@@ -205,6 +219,7 @@ def isButtonPressed():
 				inY = True
 			if inX and inY:
 				button.selected = True
+				print(button.pos, button.size, button, leftArrow.pos, leftArrow.size, leftArrow)
 			else: button.selected = False
 			if add.selected == True and aValueHasBeenSubmittedRecently == False:
 				submit()
@@ -245,7 +260,7 @@ def displayInput(): ##Blits numbers as user types
 			for inputNumber in inputNumbers:
 				if str(number.value) == inputNumber[0]:
 					screen.blit(number.image, inputNumber[1])
-def submit(): ##Creates storedValues dict and calls Data.add() on it
+def submit(): ##Creates storedValues dict and calls Data.add()  it
 	global storedValues, currentNumber
 	def getCurrentNumber(): ##Strips position from inputNumbers
 		currentNumber = ""
@@ -269,12 +284,12 @@ def submit(): ##Creates storedValues dict and calls Data.add() on it
 	def getInputType():
 			for button in MenuButtons:
 				if button.displayed == True:
-					inputType = button.name
-			return inputType
-	inputType = getInputType()
+					Type = button.name
+			return Type
+	Type = getInputType()
 	add.selected = True
 	if len(currentNumber) != 0:
-		newDatum = {'InputValue': currentNumber, 'InputTime': currentTime, 'InputType': inputType}
+		newDatum = {"Value": currentNumber, "Time": currentTime, "Type": Type}
 		storedValues.append(Data.Datum(newDatum))
 	Data.add()
 clock = pygame.time.Clock()
