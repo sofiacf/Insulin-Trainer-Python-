@@ -63,6 +63,28 @@ class Data():
 		databaseObject.close()
 		return storedValues
 Setup()
+def sortListByItemIndex(_list, index):
+	innerValueList = []
+	sortedList = []
+	for item in _list:
+		innerValueList.append(item[index])
+	innerValueList = sorted(innerValueList)
+	for value in innerValueList:
+		for item in _list:
+			if item[index] == value:
+				sortedList.append(item)
+	return sortedList
+def sortObjectsByAttribute(_list, attribute):
+	attributeList = []
+	sortedList = []
+	for item in _list:
+		attributeList.append(item.attribute)
+	attributeList = sorted(attributeList)
+	for attributeValue in attributeList:
+		for item in _list:
+			if item.attribute == attributeValue:
+				sortedList.append(item)
+	return sortedList	
 class Button():
 	def __init__(self, image, isSelected = False, position = (0,0), action = print("No action set."), name = None):
 		self.image = pygame.image.load(image)
@@ -177,13 +199,14 @@ class Graph():
 			unitConversion = {'year': 12000000, 'month': 310000, 'day': 2400, 'hour': 60}
 			graph.timeRange.unit = button.name
 			graph.timeRange.convertedunit = unitConversion[button.name]
+			print(graph.timeRange.unit, graph.timeRange.convertedunit)
 		def changeStart(button):
 			if button.pos[0] == ((SCREENWIDTH/2) - (100 / 2) - 50, 25): ##leftArrow
 				direction = -1
 			else:
 				direction = 1
 			graph.timeRange.start = graph.timeRange.start + graph.timeRange.convertedunit*direction
-	def __init__(self, width, height, position, menu, timeRange = Range('day', today)):
+	def __init__(self, width, height, position, menu, timeRange = Range('month', 201412032220)):
 		self.width = width
 		self.height = height
 		self.size = (width, height)
@@ -208,28 +231,30 @@ class Graph():
 			else:
 				ypos = 50
 			point.pos = (xpos, ypos)
-	def plotPoints(self):
-		for point in self.timeRange.points:
-			correctedPosition = (point.pos[0] + (point.size[0]/2), point.pos[1])
-			self.Surface.blit(point.image, point.pos)
+	def drawLines(self):
 		lineDrawingList = []
 		for point in self.timeRange.points:
 			if point.type == "Blood Sugar":
 				lineDrawingList.append(point.pos)
-		lineDrawingList = sorted(lineDrawingList)
+		lineDrawingList = sortListByItemIndex(lineDrawingList, 0)
 		if len(lineDrawingList) > 1:
-			pygame.draw.aalines(self.Surface, (250, 0, 0), False, lineDrawingList)
+			pygame.draw.aalines(self.Surface, (230, 0, 0), False, lineDrawingList)
+	def plotPoints(self):
+		for point in self.timeRange.points:
+			correctedPosition = (point.pos[0] - (point.size[0]/2), point.pos[1] - (point.size[1]/2))
+			self.Surface.blit(point.image, correctedPosition)
 	def displayGraph(self):
 		screen.blit(self.Surface, self.pos)
 		self.getPoints()
 		self.setPointPositions()
+		self.drawLines()
 		self.plotPoints()
 class InputWindow():
 	global submit, cancelInput
 	def submit():
 		newInput = Input()
 		createAndAddNewDatum(newInput)
-	def cancelInput():
+	def cancelInput(self):
 		global inputNumbers, currentNumber
 		inputNumbers = []
 		currentNumber = ""
@@ -258,11 +283,12 @@ class InputWindow():
 					screen.blit(number.image, (10 * i, 0))
 				i += 1
 	def displayInputWindow(self):
-		self.displayInput()
-		screen.blit(self.image, self.pos)
-		for button in self.buttons:
-			screen.blit(button.image, button.pos)
-		return True
+		if cancelInput:
+			self.displayInput()
+			screen.blit(self.image, self.pos)
+			for button in self.buttons:
+				screen.blit(button.image, button.pos)
+			return True
 def setupAddMenu():
 	global inputFields
 	addMenu = Menu()
@@ -294,7 +320,7 @@ graph = Graph(SCREENWIDTH - 100, SCREENHEIGHT - 100, (50, 50), None)
 def setupGraphControl():
 	graphControl = Menu()
 	buttonX = (SCREENWIDTH/2) - (100 / 2)
-	buttonY = 50 - 25
+	buttonY = 25
 	month = Button("Month.png", name = 'month', position = (buttonX, buttonY), action = Graph.Range.changeUnit)
 	day = Button("Day.png", name = 'day', position = (buttonX, buttonY), action = Graph.Range.changeUnit)
 	hour = Button("Hour.png", name = 'hour', position = (buttonX, buttonY), action = Graph.Range.changeUnit)
