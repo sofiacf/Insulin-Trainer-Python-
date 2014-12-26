@@ -5,6 +5,8 @@ from datetime import datetime
 pygame.init()
 def Setup():
 	global SCREENWIDTH, SCREENHEIGHT, screen, storedValues, numbers, today, clock, inputNumbers, buttons
+	global shouldCancel
+	shouldCancel = False
 	(SCREENWIDTH, SCREENHEIGHT) = (500, 500)
 	screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
 	pygame.display.set_caption("Insulin Trainer 2")
@@ -12,12 +14,12 @@ def Setup():
 		def __init__(self, value):
 			self.image = pygame.image.load("%s.png" %value)
 			self.value = value
-		def setupNumbers():
+		def setup():
 			numbers = []
 			for number in range(10):
 				numbers.append(Number(number))
 			return numbers
-	numbers = Number.setupNumbers()
+	numbers = Number.setup()
 
 	try:
 		storedValues = Data.update()
@@ -87,6 +89,7 @@ def sortObjectsByAttribute(_list, attribute):
 	return sortedList	
 class Button():
 	def __init__(self, image, isSelected = False, position = (0,0), action = print("No action set."), name = None):
+		global buttons
 		self.image = pygame.image.load(image)
 		self.selected = isSelected
 		self.size = pygame.Surface.get_size(self.image)
@@ -95,6 +98,7 @@ class Button():
 		self.ybounds = (position[1], position[1] + self.size[1])
 		self.action = action
 		self.name = name
+		buttons.append(self)
 	def performAction(self):
 		try:
 			self.action(self)
@@ -115,8 +119,8 @@ class InputCollector:
 					inY = True
 				if inX and inY:
 					button.selected = True
-	def collectInputNumbers(event):
-		def isEventANumber(event):
+	def isEventANumber(event):
+			global inputNumbers
 			if int(event.unicode) in range(10):
 				if len(inputNumbers) < 3:
 					inputNumbers.append(event.unicode)
@@ -125,20 +129,20 @@ class InputCollector:
 				return True
 			else:
 				return False
-		global inputNumbers
+	def collectInputNumbers(event):
+		global inputNumbers, newInput
 		if event.type == pygame.KEYDOWN:
+			try:
+				InputCollector.isEventANumber(event)
+			except ValueError:
+				print("That is not acceptable input. Please enter a number, submit, or delete.")
 			if event.key == pygame.K_BACKSPACE:
 				if len(inputNumbers) > 0:
 					inputNumbers.pop()
 			elif event.key == pygame.K_RETURN:
 				newInput = Input()
 				add.selected = True
-				inputNumbers = []
-			else:
-				try:
-					isEventANumber(event)
-				except ValueError:
-					print("That is not acceptable input. Please enter a number, submit, or delete.")
+				inputNumbers = []			
 class Input():
 	def __init__(self):
 		def getCurrentNumber():
@@ -250,25 +254,21 @@ class Graph():
 		self.drawLines()
 		self.plotPoints()
 class InputWindow():
-	global submit, cancelInput
-	def submit():
-		newInput = Input()
-		createAndAddNewDatum(newInput)
 	def cancelInput(self):
-		global inputNumbers, currentNumber
+		global inputNumbers, currentNumber, shouldCancel
 		inputNumbers = []
 		currentNumber = ""
-		return True
+		shouldCancel = True
 	def __init__(self, image,  position = None, displayed = False):
 		global add, cancel, displayedInputWindow
 		add = Button("add.png")
 		add.pos = (SCREENWIDTH - add.size[0], 85)
 		add.updateBounds()
-		add.action = submit
+		add.action = self.submit
 		cancel = Button("cancel.png")
 		cancel.pos = (SCREENWIDTH - cancel.size[0], 100)
 		cancel.updateBounds()
-		cancel.action = cancelInput
+		cancel.action = self.cancelInput
 		self.image = pygame.image.load(image)
 		self.size = pygame.Surface.get_size(self.image)
 		self.pos = position
@@ -278,12 +278,18 @@ class InputWindow():
 		if len(inputNumbers) > 0:
 			for number in numbers:
 				i = 0
-			for inputNumber in inputNumbers:
-				if str(number.value) == inputNumber:
-					screen.blit(number.image, (10 * i, 0))
-				i += 1
+				for inputNumber in inputNumbers:
+					if str(number.value) == inputNumber:
+						screen.blit(number.image, (10 * i, 0))
+					i += 1
+	def submit(button):
+		newInput = Input()
+		newInput.createAndAddNewDatum()
 	def displayInputWindow(self):
-		if cancelInput:
+		if shouldCancel:
+			print("The window should not be displaying, however, it is still activated!! There is a problem!!")
+			return False
+		else:
 			self.displayInput()
 			screen.blit(self.image, self.pos)
 			for button in self.buttons:
@@ -329,16 +335,6 @@ def setupGraphControl():
 	graphControl.buttons = [hour, day, month, leftArrow, rightArrow]
 	return graphControl
 graph.menu = setupGraphControl()
-def setupButtonList():
-	buttons = []
-	for button in addMenu.buttons:
-		buttons.append(button)
-	for button in graph.menu.buttons:
-		buttons.append(button)
-	buttons.append(add)
-	buttons.append(cancel)
-	return buttons
-buttons = setupButtonList()
 def activateButtons():
 	for button in buttons:
 		if button.selected:
