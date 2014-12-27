@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 pygame.init()
 def Setup():
-	global SCREENWIDTH, SCREENHEIGHT, screen, storedValues, numbers, today, clock, inputNumbers, buttons
+	global SCREENWIDTH, SCREENHEIGHT, screen, storedValues, numbers, today, clock, buttons
 	global shouldCancel
 	shouldCancel = False
 	(SCREENWIDTH, SCREENHEIGHT) = (500, 500)
@@ -108,7 +108,11 @@ class Button():
 		self.xbounds = (self.pos[0], self.pos[0] + self.size[0])
 		self.ybounds = (self.pos[1], self.pos[1] + self.size[1])
 class InputCollector:
-	def isButtonPressed(event):
+	def __init__(self):
+		global currentInputCollector
+		currentInputCollector = self
+		self.inputNumbers = []
+	def isButtonPressed(self, event):
 		if event.type == pygame.MOUSEBUTTONUP:
 			for button in buttons:
 				inX = False
@@ -119,47 +123,48 @@ class InputCollector:
 					inY = True
 				if inX and inY:
 					button.selected = True
-	def isEventANumber(event):
-			global inputNumbers
+	def isEventANumber(self, event):
+			maxLength = 3
 			if int(event.unicode) in range(10):
-				if len(inputNumbers) < 3:
-					inputNumbers.append(event.unicode)
-				elif len(inputNumbers) == 3:
+				if len(self.inputNumbers) < maxLength:
+					self.inputNumbers.append(event.unicode)
+				elif len(self.inputNumbers) == maxLength:
 					print("Please submit input or delete a number.")
 				return True
 			else:
 				return False
-	def collectInputNumbers(event):
-		global inputNumbers, newInput
+	def collectInputNumbers(self, event):
+		global newInput
 		if event.type == pygame.KEYDOWN:
 			try:
-				InputCollector.isEventANumber(event)
+				self.isEventANumber(event)
 			except ValueError:
 				print("That is not acceptable input. Please enter a number, submit, or delete.")
 			if event.key == pygame.K_BACKSPACE:
-				if len(inputNumbers) > 0:
-					inputNumbers.pop()
+				if self.inputNumbers:
+					self.inputNumbers.pop()
 			elif event.key == pygame.K_RETURN:
 				newInput = Input()
 				add.selected = True
-				inputNumbers = []			
+				self.inputNumbers = []
+				return newInput
 class Input():
 	def __init__(self):
 		def getCurrentNumber():
 			currentNumber = ""
-			while len(currentNumber) < len(inputNumbers):
-				for number in inputNumbers:
+			while len(currentNumber) < len(currentInputCollector.inputNumbers):
+				for number in currentInputCollector.inputNumbers:
 					currentNumber = currentNumber + number[0]
 			return str(currentNumber)
 		def getCurrentTime():
 			currentTime = ""
 			now = datetime.now()
 			dateAttributes = [now.year, now.month, now.day, now.hour, now.minute]
-			for attribute in dateAttributes:
-				attribute = str(attribute)
-				if len(attribute) < 2:
-					attribute = "0%s" % attribute
-				currentTime = currentTime + attribute
+			for unit in dateUnits:
+				unit = str(unit)
+				if len(unit) < 2:
+					unit = "0%s" % unit
+				currentTime = currentTime + unit
 			return currentTime
 		def getInputType():
 			for button in addMenu.buttons:
@@ -170,7 +175,7 @@ class Input():
 		self.time = getCurrentTime()
 		self.type = getInputType()
 	def createAndAddNewDatum(self):
-		if len(self.currentNumber) > 0:
+		if self.currentNumber:
 			newDatum = {"Value": self.currentNumber, "Time": self.currentTime, "Type": self.inputType}
 			storedValues.append(Data.Datum(newDatum))
 class Menu():
@@ -255,8 +260,7 @@ class Graph():
 		self.plotPoints()
 class InputWindow():
 	def cancelInput(self):
-		global inputNumbers, currentNumber, shouldCancel
-		inputNumbers = []
+		global currentNumber, shouldCancel
 		currentNumber = ""
 		shouldCancel = True
 	def __init__(self, image,  position = None, displayed = False):
@@ -274,11 +278,12 @@ class InputWindow():
 		self.pos = position
 		self.buttons = [add, cancel]
 		displayedInputWindow = self
+		self.inputCollector = InputCollector()
 	def displayInput(self):
-		if len(inputNumbers) > 0:
+		if self.inputCollector.inputNumbers:
 			for number in numbers:
 				i = 0
-				for inputNumber in inputNumbers:
+				for inputNumber in self.inputCollector.inputNumbers:
 					if str(number.value) == inputNumber:
 						screen.blit(number.image, (10 * i, 0))
 					i += 1
@@ -348,8 +353,8 @@ while running:
 	activateButtons()
 	pygame.display.flip()
 	for event in pygame.event.get():
-		InputCollector.isButtonPressed(event)
-		InputCollector.collectInputNumbers(event)
+		currentInputCollector.isButtonPressed(event)
+		currentInputCollector.collectInputNumbers(event)
 		if event.type == pygame.QUIT:
 			running = False
 	clock.tick(20)
