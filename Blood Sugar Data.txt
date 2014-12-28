@@ -1,1 +1,1 @@
-[{"Value": 267, "Type": "Blood Sugar", "Time": 201412032220}, {"Value": 6, "Type": "Insulin Dose", "Time": 201412032220}, {"Value": 160, "Type": "Blood Sugar", "Time": 201412051247}, {"Value": 103, "Type": "Blood Sugar", "Time": 201412051320}, {"Value": 161, "Type": "Blood Sugar", "Time": 201412051936}, {"Value": 85, "Type": "Blood Sugar", "Time": 201412061445}, {"Value": 113, "Type": "Insulin Dose", "Time": 201412071302}, {"Value": 88, "Type": "Blood Sugar", "Time": 201412091316}, {"Value": 87, "Type": "Blood Sugar", "Time": 201412092300}]
+[]
