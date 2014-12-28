@@ -100,6 +100,7 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 			self.size = pygame.Surface.get_size(self.image)
 			start = 0
 			self.pos = (start, start)
+	
 	class Range():
 		def __init__(self, unit, start, points=[]):
 			unitVals = {"year": 12000000, "month": 310000, "day": 2400, "hour": 60}
@@ -110,14 +111,33 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 			self.points = []
 		def changeUnit(button):
 			unitVals = {"year": 12000000, "month": 310000, "day": 2400, "hour": 60}
+
+			if button.name == "year":
+				newButton = Button("Hour.png", name = "hour", position = (button.pos), action = button.action)
+			elif button.name == "month":
+				newButton = Button("Year.png", name = "year", position = (button.pos), action = button.action)
+			elif button.name == "day":
+				newButton = Button("Month.png", name = "month", position = (button.pos), action = button.action)
+			elif button.name == "hour":
+				newButton = Button("Day.png", name = "day", position = (button.pos), action = button.action)
+
+			graph.menu.buttons.append(newButton)
+
 			graph.timeRange.unit = button.name
 			graph.timeRange.unitVal = unitVals[button.name]
+
+			button.selected = False
 		def changeStart(button):
-			if button == leftArrow:
+			if button.name == "leftArrow":
 				direction = -1
 			else:
 				direction = 1
+			
+
+
 			graph.timeRange.start += graph.timeRange.unitVal*direction
+
+			button.selected = False
 
 	def __init__(self, width, height, position, menu, timeRange=Range("day", today)):
 		self.width = width
@@ -129,6 +149,7 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 		self.timeRange = timeRange
 	
 	def getPoints(self):
+		self.timeRange.points = []
 		for datum in storedValues:
 			if self.timeRange.start < datum.time < self.timeRange.cutoff:
 				newPoint = Graph.Point(datum.time, datum.value, datum.type)
@@ -330,20 +351,19 @@ def isButtonPressed(event):
 
 def setupGraphControl():
 	graphControl = Menu()
-	buttonX = (SCREENWIDTH/2) - (100 / 2)
-	buttonY = 25
-	month = Button("Month.png", name = 'month', position = (buttonX, buttonY), action = Graph.Range.changeUnit)
-	day = Button("Day.png", name = 'day', position = (buttonX, buttonY), action = Graph.Range.changeUnit)
-	hour = Button("Hour.png", name = 'hour', position = (buttonX, buttonY), action = Graph.Range.changeUnit)
-	leftArrow = Button("LeftArrow.png", position = (month.pos[0] - 50, buttonY), action = Graph.Range.changeStart)
-	rightArrow = Button("RightArrow.png", position = (month.xbounds[1], buttonY), action = Graph.Range.changeStart)
-	graphControl.buttons = [hour, day, month, leftArrow, rightArrow]
+	buttonX = (SCREENWIDTH/2) - 50 ##50 is button width
+	buttonY = graph.pos[1] - 25 ##25 is button height
+	day = Button("Day.png", name = "day", position = (buttonX, buttonY), action = Graph.Range.changeUnit)
+	leftArrow = Button("LeftArrow.png", name="leftArrow", position = (day.pos[0] - 50, buttonY), action = Graph.Range.changeStart)
+	rightArrow = Button("RightArrow.png", name="rightArrow", position = (day.xbounds[1], buttonY), action = Graph.Range.changeStart)
+	graphControl.buttons = [day, leftArrow, rightArrow]
 	return graphControl
 graph.menu = setupGraphControl()
 
 while running:
 	pygame.Surface.fill(screen, (0x445566))
 	graph.displayGraph()
+	graph.menu.displayMenu()
 	addMenu.displayMenu()
 
 	if currentInputCollector:
@@ -368,4 +388,4 @@ while running:
 
 	pygame.display.flip()
 	clock.tick(20)
-sys.exit()()
+sys.exit()
