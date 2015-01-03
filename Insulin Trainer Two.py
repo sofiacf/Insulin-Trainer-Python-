@@ -3,69 +3,19 @@ import sys
 import json
 from datetime import datetime
 pygame.init()
-def Setup():
-	global SCREENWIDTH, SCREENHEIGHT, screen,  black, red
-	global storedValues, clock, running, today, buttons
-	global currentInputCollector, currentWindow, inputNumbers
 
-	running = True
-	currentInputCollector = False
-	currentWindow = False
-	inputNumbers = []
-	black = (0, 0, 0); red = (230, 0, 0)
+def yearIsLeapYear(year):
+	if (year - 2000) % 4 == 0:
+		return True
+	else:
+		return False
 
-	(SCREENWIDTH, SCREENHEIGHT) = (500, 500)
-	screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
-	pygame.display.set_caption("Insulin Trainer")
-	
-	clock = pygame.time.Clock()
-	
-	def getTodaysDate():
-		today = ""
-		now = datetime.now()
-		dateUnits = [now.year, now.month, now.day]
-		for unit in dateUnits:
-			unit = str(unit)
-			if len(unit) < 2:
-				unit = "0%s" % unit
-			today = today + unit
-		return int(today+"0000")
-	today = getTodaysDate()
-	buttons = []
-
-	try:
-		storedValues = Data.update()
-	except ValueError:
-		storedValues = []
-
-class Data: ##Datum class (inside) takes a dictionary with time, value, and type
-	def add():
-		dataToAdd = []
-		for datum in storedValues:
-			datumDict = {"Time": datum.time, "Value": datum.value, "Type": datum.type}
-			dataToAdd.append(datumDict)
-		database = "Blood Sugar Data.txt"
-		databaseObject = open(database, "w")
-		json.dump(dataToAdd, databaseObject)
-		databaseObject.close()
-	def update():
-		database = "Blood Sugar Data.txt"
-		databaseObject = open(database, "r")
-		dataDict = json.load(databaseObject)
-		storedValues = []
-		for datum in dataDict:
-			datum = Data.Datum(datum)
-			storedValues.append(datum)
-		databaseObject.close()
-		return storedValues
-
-	class Datum():
-		def __init__(self, dictionary):
-			self.time = int(dictionary["Time"])
-			self.value = int(dictionary["Value"])
-			self.type = dictionary["Type"]
-
-Setup()
+dates = convertStupidDateIntsToDatetimeObjects(dates)
+newDates = []
+for date in dates:
+	date = convertDateToSecondsSinceY2K(date)
+	newDates.append(date)
+dates = newDates
 
 def sortListByItemIndex(_list, index):
 	innerValueList = []
@@ -78,17 +28,82 @@ def sortListByItemIndex(_list, index):
 			if item[index] == value:
 				sortedList.append(item)
 	return sortedList
-def sortObjectsByAttribute(_list, attribute):
+def sortObjectsByAttribute(_list, attribute): ##Attribute should be given as a string
 	attributeList = []
 	sortedList = []
 	for item in _list:
-		attributeList.append(item.attribute)
+		attributeList.append(getattr(item, attribute))
 	attributeList = sorted(attributeList)
 	for attributeValue in attributeList:
 		for item in _list:
-			if item.attribute == attributeValue:
+			if getattr(item, attribute) == attributeValue:
 				sortedList.append(item)
-	return sortedList	
+	return sortedList
+
+def Setup():
+	global SCREENWIDTH, SCREENHEIGHT, screen,  black, red
+	global storedValues, clock, running, today, buttons
+	global SECONDSINHOUR, SECONDSINDAY, SECONDSINWEEK
+	global currentInputCollector, currentWindow, inputNumbers
+	global firstLoop, rangeHasChanged
+
+	SECONDSINHOUR = 3600
+	SECONDSINDAY = SECONDSINHOUR * 24
+	SECONDSINWEEK = SECONDSINDAY * 7
+
+	firstLoop = True
+	rangeHasChanged = False
+	running = True
+	currentInputCollector = False
+	currentWindow = False
+	inputNumbers = []
+	black = (0, 0, 0); red = (230, 0, 0)
+
+	(SCREENWIDTH, SCREENHEIGHT) = (500, 500)
+	screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
+	pygame.display.set_caption("Insulin Trainer")
+	
+	clock = pygame.time.Clock()
+
+	today = convertDateToSecondsSinceY2K(datetime.now())
+	buttons = []
+
+	try:
+		storedValues = Data.update()
+	except ValueError:
+		storedValues = []
+
+class Data: ##Datum class (inside) takes a dictionary with time, value, and type
+	def add():
+		dataToAdd = []
+		for datum in storedValues:
+			datumDict = {"Time": datum.time, "Value": datum.value, "Type": datum.type}
+			dataToAdd.append(datumDict)		
+		database = "Blood Sugar Data.txt"
+		databaseObject = open(database, "w")
+		json.dump(dataToAdd, databaseObject)
+		databaseObject.close()
+	def update():
+		database = "Blood Sugar Data.txt"
+		databaseObject = open(database, "r")
+		dataDict = json.load(databaseObject)
+		storedValues = []
+		i = 0
+		for datum in dataDict:
+			datum = Data.Datum(datum)
+			storedValues.append(datum)
+		storedValues = sortObjectsByAttribute(storedValues, "time")
+		databaseObject.close()
+		return storedValues
+
+	class Datum():
+		def __init__(self, dictionary):
+			self.time = int(dictionary["Time"])
+			self.value = int(dictionary["Value"])
+			self.type = dictionary["Type"]
+
+Setup()
+
 
 class Graph(): ##Takes width, height, pos, menu, optional timeRange
 	class Point(Data.Datum): ##takes time, value, type
@@ -103,13 +118,20 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 	
 	class Range():
 		def __init__(self, unit, start, points=[]):
-			unitVals = {"year": 12000000, "month": 310000, "day": 2400, "hour": 60}
+			unitVals = {"year": 12000000, "month": 310000, "week": 604800, "day": 2400, "hour": 60}
 			self.unit = unit
 			self.unitVal = unitVals[unit]
 			self.start = start
 			self.cutoff = start + self.unitVal
 			self.points = []
+
+		def update(self):
+			unitVals = {"year": 12000000, "month": 310000, "day": 2400, "hour": 60}
+			self.unitVal = unitVals[self.unit]
+			self.cutoff = self.start + self.unitVal
+
 		def changeUnit(button):
+			global rangeHasChanged
 			unitVals = {"year": 12000000, "month": 310000, "day": 2400, "hour": 60}
 
 			if button.name == "year":
@@ -123,21 +145,24 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 
 			graph.menu.buttons.append(newButton)
 
-			graph.timeRange.unit = button.name
-			graph.timeRange.unitVal = unitVals[button.name]
+			graph.timeRange.unit = newButton.name
+			graph.timeRange.unitVal = unitVals[newButton.name]
+			graph.timeRange.cutoff = graph.timeRange.start + graph.timeRange.unitVal
 
 			button.selected = False
+			rangeHasChanged = True
 		def changeStart(button):
+			global rangeHasChanged
 			if button.name == "leftArrow":
 				direction = -1
 			else:
 				direction = 1
-			
-
 
 			graph.timeRange.start += graph.timeRange.unitVal*direction
+			graph.timeRange.cutoff = graph.timeRange.start + graph.timeRange.unitVal
 
 			button.selected = False
+			rangeHasChanged = True
 
 	def __init__(self, width, height, position, menu, timeRange=Range("day", today)):
 		self.width = width
@@ -149,11 +174,14 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 		self.timeRange = timeRange
 	
 	def getPoints(self):
-		self.timeRange.points = []
-		for datum in storedValues:
-			if self.timeRange.start < datum.time < self.timeRange.cutoff:
-				newPoint = Graph.Point(datum.time, datum.value, datum.type)
-				self.timeRange.points.append(newPoint)
+		global rangeHasChanged
+		if rangeHasChanged or firstLoop:
+			self.timeRange.points = []
+			for datum in storedValues:
+				if self.timeRange.start < datum.time < self.timeRange.cutoff:
+					newPoint = Graph.Point(datum.time, datum.value, datum.type)
+					self.timeRange.points.append(newPoint)
+			rangeHasChanged = False
 	def setPointPositions(self):
 		heightMultiplier = 1.6
 		domainDivisor = self.timeRange.unitVal / self.width
@@ -166,24 +194,32 @@ class Graph(): ##Takes width, height, pos, menu, optional timeRange
 				ypos = graph.height
 			point.pos = (xpos, ypos)
 	def drawLines(self):
-		lineDrawingList = []
-		for point in self.timeRange.points:
-			if point.type == "Blood Sugar":
-				lineDrawingList.append(point.pos)
-		lineDrawingList = sortListByItemIndex(lineDrawingList, 0)
-		if len(lineDrawingList) > 1:
-			pygame.draw.aalines(self.surface, red, False, lineDrawingList)
+		global lineDrawingList
+		if rangeHasChanged or firstLoop:
+			lineDrawingList = []
+			for point in self.timeRange.points:
+				if point.type == "Blood Sugar":
+					lineDrawingList.append(point.pos)
+			lineDrawingList = sortListByItemIndex(lineDrawingList, 0)
+			if len(lineDrawingList) > 1:
+				pygame.draw.aalines(self.surface, red, False, lineDrawingList)
+		else:
+			if len(lineDrawingList) > 1:
+				pygame.draw.aalines(self.surface, red, False, lineDrawingList)
 	def plotPoints(self):
 		for point in self.timeRange.points:
 			correctedPosition = (point.pos[0] - point.size[0]/2, point.pos[1] - (point.size[1]/2))
 			self.surface.blit(point.image, correctedPosition)
-	
+
 	def displayGraph(self):
 		screen.blit(self.surface, self.pos)
 		self.getPoints()
 		self.setPointPositions()
 		self.drawLines()
 		self.plotPoints()
+
+margin = 100
+graph = Graph(SCREENWIDTH - margin, SCREENHEIGHT - margin, (50, 50), None)
 
 class Button(): ##Takes image, name, opt selection, opt position, and opt action
 	def __init__(self, image, name, isSelected=False, position=(0,0), action=None):
@@ -270,8 +306,6 @@ class Menu(): ##Takes optional buttons and optional position
 	def displayMenu(self):
 		for button in self.buttons:
 			screen.blit(button.image, button.pos)
-margin = 100
-graph = Graph(SCREENWIDTH - margin, SCREENHEIGHT - margin, (50, 50), None)
 
 class InputWindow(): ##Takes self, image, name, and optional position
 	def cancelInput(self):
@@ -283,7 +317,13 @@ class InputWindow(): ##Takes self, image, name, and optional position
 		inputNumbers = []
 		self.selected = False
 	def submit(self):
+		global currentWindow, currentInputCollector, inputNumbers
 		currentInputCollector.submit()
+		del(currentWindow)
+		currentWindow = None
+		del(currentInputCollector)
+		currentInputCollector = None
+		inputNumbers = []
 		self.selected = False
 	def __init__(self, image, name, position=None):
 		global currentWindow
@@ -310,7 +350,6 @@ class InputWindow(): ##Takes self, image, name, and optional position
 		screen.blit(self.image, self.pos)
 		for button in self.buttons:
 			screen.blit(button.image, button.pos)
-
 
 def setupAddMenu():
 	addMenu = Menu()
@@ -385,7 +424,7 @@ while running:
 				button.action()
 			except TypeError:
 				button.action(button)
-
+	firstLoop = False
 	pygame.display.flip()
 	clock.tick(20)
 sys.exit()
