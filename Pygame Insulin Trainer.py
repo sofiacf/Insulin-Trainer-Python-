@@ -3,6 +3,31 @@ import sys
 import json
 from datetime import datetime
 pygame.init()
+class Data():
+	def add():
+		dataToAdd = []
+		for datum in storedValues:
+			datumDict = {"Time": datum.time, "Value": datum.value, "Type": datum.type}
+			dataToAdd.append(datumDict)
+			inputFile = "Blood Sugar Data.txt"
+			inputFileObject = open(inputFile, 'w')
+			json.dump(dataToAdd, inputFileObject)
+			inputFileObject.close()
+	def update():
+		inputFile = "Blood Sugar Data.txt"
+		inputFileObject = open(inputFile, 'r')
+		dataDictionary = json.load(inputFileObject)
+		storedValues = []
+		for datum in dataDictionary:
+			datum = Data.Datum(datum)
+			storedValues.append(datum)
+			inputFileObject.close()
+		return storedValues
+	class Datum():
+		def __init__(self, dictionary):
+			self.time = int(dictionary["Time"])
+			self.value = int(dictionary["Value"])
+			self.type = dictionary["Type"]
 def Setup():
 	global width, height, screen, key, aValueHasBeenSubmittedRecently
 	global numbers, currentNumber, inputNumbers, storedValues
@@ -12,46 +37,21 @@ def Setup():
 	pygame.display.set_caption("Insulin Trainer")
 	try:
 		storedValues = Data.update()
-	except ValueError:
+	except TypeError:
 		storedValues = []
 	aValueHasBeenSubmittedRecently = False
 	class Number():
 		def __init__(self, value):
-			self.image = pygame.image.load("%s.png" %value)
+			self.image = pygame.image.load("img/%s.png" %value)
 			self.value = value
-		def setupNumbers():
-			numbers = []
-			for number in range(10):
-				numbers.append(Number(number))
-			return numbers
-	numbers = Number.setupNumbers()
+	def setupNumbers():
+		numbers = []
+		for number in range(10):
+			numbers.append(Number(number))
+		return numbers
+	numbers = setupNumbers()
 	currentNumber = ""
 	inputNumbers = []
-class Data():
-	def add():
-		dataToAdd = []
-		for datum in storedValues:
-			datumDict = {"Time": datum.time, "Value": datum.value, "Type": datum.type}
-			dataToAdd.append(datumDict)
-		inputFile = "Blood Sugar Data.txt"
-		inputFileObject = open(inputFile, 'w')
-		json.dump(dataToAdd, inputFileObject)
-		inputFileObject.close()
-	def update():
-		inputFile = "Blood Sugar Data.txt"
-		inputFileObject = open(inputFile, 'r')
-		dataDictionary = json.load(inputFileObject)
-		storedValues = []
-		for datum in dataDictionary:
-			datum = Data.Datum(datum)
-			storedValues.append(datum)
-		inputFileObject.close()
-		return storedValues
-	class Datum():
-		def __init__(self, dictionary):
-			self.time = int(dictionary["Time"])
-			self.value = int(dictionary["Value"])
-			self.type = dictionary["Type"]
 Setup()
 class Button(): ##Other control buttons
 	def __init__(self, image, isSelected, commonName, position):
@@ -62,9 +62,9 @@ class Button(): ##Other control buttons
 		self.pos = position
 def ButtonSetup():
 	global cancel, add
-	cancel = Button("cancel.png", False, "cancel", 100)
+	cancel = Button("img/cancel.png", False, "cancel", 100)
 	cancel.pos = (width - cancel.size[0], 100)
-	add = Button("add.png", False, "add", 85)
+	add = Button("img/add.png", False, "add", 85)
 	add.pos = (width - add.size[0], 85)
 ButtonSetup()
 class AddMenu(Button): ##Buttons to display input fields
@@ -80,9 +80,9 @@ class AddMenu(Button): ##Buttons to display input fields
 		self.displayed = displayed
 def AddMenuSetup():
 	global bloodSugarButton, insulinDoseButton, foodConsumptionButton, MenuButtons, allTheButtons
-	bloodSugarButton = AddMenu("Blood Sugar Button.png", 0, False, "Blood Sugar", pygame.image.load("Blood Sugar Input Field.png"), False)
-	insulinDoseButton = AddMenu("Insulin Dose Button.png", 1, False, "Insulin Dose", pygame.image.load("Insulin Dose Input Field.png"), False)
-	foodConsumptionButton = AddMenu("Food Consumption Button.png", 2, False, "Food Consumption", pygame.image.load("Food Consumption Input Field.png"), False)
+	bloodSugarButton = AddMenu("img/Blood Sugar Button.png", 0, False, "Blood Sugar", pygame.image.load("img/Blood Sugar Input Field.png"), False)
+	insulinDoseButton = AddMenu("img/Insulin Dose Button.png", 1, False, "Insulin Dose", pygame.image.load("img/Insulin Dose Input Field.png"), False)
+	foodConsumptionButton = AddMenu("img/Food Consumption Button.png", 2, False, "Food Consumption", pygame.image.load("img/Food Consumption Input Field.png"), False)
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
 AddMenuSetup()
 class Graph():
@@ -97,7 +97,7 @@ class Graph():
 	class Range():
 		global unitConversion
 		unitConversion = {'year': 12000000, 'month': 310000, 'day': 2400, 'hour': 60}
-		def __init__(self, unit, start, points=[]):	
+		def __init__(self, unit, start, points=[]):
 			self.unit = unit
 			self.convertedunit = unitConversion[unit]
 			self.start = start
@@ -115,17 +115,17 @@ class Graph():
 				self.ypos = 50 - self.height
 				self.pos = (self.xpos, self.ypos)
 				self.selected = isSelected
-		hour = RangeButton("Hour.png", 'hour')
-		day = RangeButton("Day.png", 'day')
-		month = RangeButton("Month.png", 'month')
+		hour = RangeButton("img/Hour.png", 'hour')
+		day = RangeButton("img/Day.png", 'day')
+		month = RangeButton("img/Month.png", 'month')
 		rangeButtons = [hour, day, month]
-		leftArrow = RangeButton("LeftArrow.png", -1)
-		rightArrow = RangeButton("RightArrow.png", 1)
+		leftArrow = RangeButton("img/LeftArrow.png", -1)
+		rightArrow = RangeButton("img/RightArrow.png", 1)
 		navigationButtons = [leftArrow, rightArrow]
 		try:
 			placeHolderRangeButton
 		except NameError:
-			placeHolderRangeButton = RangeButton("Hour.png", 'hour') ##For isSelected
+			placeHolderRangeButton = RangeButton("img/Hour.png", 'hour') ##For isSelected
 		leftArrow.pos = (placeHolderRangeButton.xpos - leftArrow.width, placeHolderRangeButton.ypos)
 		rightArrow.pos = (placeHolderRangeButton.xpos + placeHolderRangeButton.width, placeHolderRangeButton.ypos)
 		def displayRangeControl():
@@ -178,8 +178,8 @@ class Graph():
 				else:
 					ypos = (50)
 				datum.position = (xpos, ypos)
-		inputSymbols = {"Blood Sugar": pygame.image.load("Blood Sugar Point.png"), "Insulin Dose" : pygame.image.load("Insulin Dose Point.png"), "Food Consumption": pygame.image.load("Food Consumption Point.png")}
-		pointCenterCorrector = (pygame.Surface.get_size(pygame.image.load("Blood Sugar Point.png"))[0]/2)
+		inputSymbols = {"Blood Sugar": pygame.image.load("img/Blood Sugar Point.png"), "Insulin Dose" : pygame.image.load("img/Insulin Dose Point.png"), "Food Consumption": pygame.image.load("img/Food Consumption Point.png")}
+		pointCenterCorrector = (pygame.Surface.get_size(pygame.image.load("img/Blood Sugar Point.png"))[0]/2)
 		def plotPoints(): ##Blits points from pointsToGraph, pos corrected to center; draws connecting lines
 			lineDrawingList = []
 			for datum in self.myrange.points:
@@ -206,7 +206,7 @@ def displayInput():
 					screen.blit(number.image, (len(inputNumbers) * 10, 0))
 def displayMenuButtons(): ##Blits the usual menu buttons.
 	for button in MenuButtons:
-		screen.blit(button.image, button.pos)		 
+		screen.blit(button.image, button.pos)
 def isButtonPressed():
 	global aValueHasBeenSubmittedRecently, rangeHasRecentlyBeenChanged
 	if pygame.mouse.get_pressed()[0] == True:
@@ -225,7 +225,9 @@ def isButtonPressed():
 				submit()
 				aValueHasBeenSubmittedRecently = True
 				add.selected = False
-	else: aValueHasBeenSubmittedRecently = False; rangeHasRecentlyBeenChanged = False
+	else:
+		aValueHasBeenSubmittedRecently = False
+		rangeHasRecentlyBeenChanged = False
 def displayInputWindow(): ##Shows the input screen until cancel.
 	global currentNumber, inputNumbers
 	for button in MenuButtons:
@@ -255,7 +257,7 @@ def collectInput(event): ##Adds numbers to inputNumbers; calls submit
 			else:
 				print("That is not acceptable input. Please try again with a /NUMBER/.")
 def displayInput(): ##Blits numbers as user types
-	if displayInputWindow() and len(inputNumbers) > 0:  
+	if displayInputWindow() and len(inputNumbers) > 0:
 		for number in numbers:
 			for inputNumber in inputNumbers:
 				if str(number.value) == inputNumber[0]:
