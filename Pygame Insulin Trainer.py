@@ -2,6 +2,8 @@ import pygame
 import sys
 import json
 from datetime import datetime
+#THIS IS FROM WHEN I WAS A TEENAGER; IT'S BASICALLY MY FIRST PROGRAM
+#PLEASE NOTE I WRITE BETTER CODE NOW THANK YOU
 pygame.init()
 class Data():
 	def add():
