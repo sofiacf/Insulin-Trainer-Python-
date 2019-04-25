@@ -264,15 +264,14 @@ def displayInput(): ##Blits numbers as user types
 			for inputNumber in inputNumbers:
 				if str(number.value) == inputNumber[0]:
 					screen.blit(number.image, inputNumber[1])
+
 def submit(): ##Creates storedValues dict and calls Data.add()  it
-	global storedValues, currentNumber
 	def getCurrentNumber(): ##Strips position from inputNumbers
 		currentNumber = ""
-		if len(currentNumber) < len(inputNumbers):
-			for inputnumber in inputNumbers:
-				currentNumber = currentNumber + inputnumber[0]
-		if len(currentNumber) >= 1:
-			currentNumber = str(currentNumber)
+		if len(inputNumbers) < 1:
+			return
+		else for inputnumber in inputNumbers:
+			currentNumber = currentNumber + inputnumber[0]
 		return str(currentNumber)
 	currentNumber = getCurrentNumber()
 	def getCurrentTime():
@@ -296,9 +295,10 @@ def submit(): ##Creates storedValues dict and calls Data.add()  it
 		newDatum = {"Value": currentNumber, "Time": currentTime, "Type": Type}
 		storedValues.append(Data.Datum(newDatum))
 	Data.add()
+
 clock = pygame.time.Clock()
-running = True
-while running:
+
+while True:
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
 	myGraph.displayGraph()
@@ -310,7 +310,7 @@ while running:
 	pygame.display.flip()
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
-			running = False
+			break;
 		else:
 			collectInput(event)
 	clock.tick(20)
