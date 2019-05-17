@@ -2,87 +2,58 @@ import pygame
 import sys
 import json
 from datetime import datetime
-#THIS IS FROM WHEN I WAS A TEENAGER; IT'S BASICALLY MY FIRST PROGRAM
-#PLEASE NOTE I WRITE BETTER CODE NOW THANK YOU
 pygame.init()
-class Data():
-	def add():
-		dataToAdd = []
-		for datum in storedValues:
-			datumDict = {"Time": datum.time, "Value": datum.value, "Type": datum.type}
-			dataToAdd.append(datumDict)
-			inputFile = "Blood Sugar Data.txt"
-			inputFileObject = open(inputFile, 'w')
-			json.dump(dataToAdd, inputFileObject)
-			inputFileObject.close()
-	def update():
-		inputFile = "Blood Sugar Data.txt"
-		inputFileObject = open(inputFile, 'r')
-		dataDictionary = json.load(inputFileObject)
-		storedValues = []
-		for datum in dataDictionary:
-			datum = Data.Datum(datum)
-			storedValues.append(datum)
-			inputFileObject.close()
-		return storedValues
-	class Datum():
-		def __init__(self, dictionary):
-			self.time = int(dictionary["Time"])
-			self.value = int(dictionary["Value"])
-			self.type = dictionary["Type"]
-def Setup():
-	global width, height, screen, key, aValueHasBeenSubmittedRecently
-	global numbers, currentNumber, inputNumbers, storedValues
-	(width, height) = (500, 500)
-	screen = pygame.display.set_mode((width, height))
-	key = pygame.key.get_pressed()
-	pygame.display.set_caption("Insulin Trainer")
-	try:
-		storedValues = Data.update()
-	except TypeError:
-		storedValues = []
-	aValueHasBeenSubmittedRecently = False
-	class Number():
-		def __init__(self, value):
-			self.image = pygame.image.load("img/%s.png" %value)
-			self.value = value
-	def setupNumbers():
-		numbers = []
-		for number in range(10):
-			numbers.append(Number(number))
-		return numbers
-	numbers = setupNumbers()
-	currentNumber = ""
-	inputNumbers = []
-Setup()
+screen = pygame.display.set_mode((500, 500))
+pygame.display.set_caption("Insulin Trainer")
+def readData():
+	file = open("Blood Sugar Data.txt", 'r')
+	json_data = json.load(file)
+	data = []
+	for datum in json_data:
+		data.append(datum)
+	file.close()
+	return data
+data = readData()
+def writeData():
+	file = open("Blood Sugar Data.txt", 'w')
+	json.dump(storedValues, file)
+	file.close()
+class UI():
+	def __init__(self, buttons):
+		self.buttons = buttons ##Add, cancel
+	##loadComponents():
+		global cancel, add
+		# cancel = Button("cancel", 100)
+		# cancel.pos = (width - cancel.size[0], 100)
+		# add = Button("img/add.png", False, "add", 85)
+		# add.pos = (width - add.size[0], 85)
+		##bloodSugarButton, insulinDoseButton, foodConsumptionButton, MenuButtons
+	def displayInput():
+		if displayInputWindow() and len(inputNumbers) > 0:
+			for inputNumber in inputNumbers:
+				screen.blit(pygame.image.load("img/%s.png" %inputNumber[0]), (len(inputNumbers) * 10, 0))
+	def displayButtons():
+		for button in self.buttons:
+			screen.blit(pygame.image.load("img/%s.png" %button.name, button.pos)
 class Button(): ##Other control buttons
-	def __init__(self, image, isSelected, commonName, position):
-		self.image = pygame.image.load(image)
-		self.selected = isSelected
-		self.name = commonName
-		self.size = pygame.Surface.get_size(self.image)
+	def __init__(self, name, position):
+		self.name = name
 		self.pos = position
-def ButtonSetup():
-	global cancel, add
-	cancel = Button("img/cancel.png", False, "cancel", 100)
-	cancel.pos = (width - cancel.size[0], 100)
-	add = Button("img/add.png", False, "add", 85)
-	add.pos = (width - add.size[0], 85)
-ButtonSetup()
-class AddMenu(Button): ##Buttons to display input fields
-	def __init__(self, image, inputID, isSelected, commonName, field, displayed):
+		self.selected = false
+class Menu():
+	def __init__(self, image, inputID, name, field, displayed):
 		self.image = pygame.image.load(image)
-		self.id = inputID
-		self.selected = isSelected
-		self.name = commonName
+		self.selected = false
+		self.name = name
 		self.pos = (width - pygame.Surface.get_size(self.image)[0], pygame.Surface.get_size(self.image)[1] * self.id)
-		self.size = pygame.Surface.get_size(self.image)
 		self.field = field
 		self.fieldpos = (width - pygame.Surface.get_size(self.field)[0], 0)
 		self.displayed = displayed
+	def get_size():
+		return pygame.Surface.get_size(self.image)
 def AddMenuSetup():
-	global bloodSugarButton, insulinDoseButton, foodConsumptionButton, MenuButtons, allTheButtons
-	bloodSugarButton = AddMenu("img/Blood Sugar Button.png", 0, False, "Blood Sugar", pygame.image.load("img/Blood Sugar Input Field.png"), False)
+	global , allTheButtons
+	bloodSugarButton = AddMenu("Blood Sugar"), False)
 	insulinDoseButton = AddMenu("img/Insulin Dose Button.png", 1, False, "Insulin Dose", pygame.image.load("img/Insulin Dose Input Field.png"), False)
 	foodConsumptionButton = AddMenu("img/Food Consumption Button.png", 2, False, "Food Consumption", pygame.image.load("img/Food Consumption Input Field.png"), False)
 	MenuButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton]
@@ -200,16 +171,7 @@ myGraph = Graph(width - 100, height - 100, (50, 50), (0, 0, 0))
 myGraph.graphControl()
 allTheButtons = [bloodSugarButton, foodConsumptionButton, insulinDoseButton,
 					add, cancel, placeHolderRangeButton, rightArrow, leftArrow]
-def displayInput():
-	if displayInputWindow() and len(inputNumbers) > 0:
-		for number in numbers:
-			for inputnumber in inputNumbers:
-				if str(number.value) == inputNumber[0]:
-					screen.blit(number.image, (len(inputNumbers) * 10, 0))
-def displayMenuButtons(): ##Blits the usual menu buttons.
-	for button in MenuButtons:
-		screen.blit(button.image, button.pos)
-def isButtonPressed():
+def monitorButtons():
 	global aValueHasBeenSubmittedRecently, rangeHasRecentlyBeenChanged
 	if pygame.mouse.get_pressed()[0] == True:
 		for button in allTheButtons:
@@ -264,14 +226,14 @@ def displayInput(): ##Blits numbers as user types
 			for inputNumber in inputNumbers:
 				if str(number.value) == inputNumber[0]:
 					screen.blit(number.image, inputNumber[1])
-
 def submit(): ##Creates storedValues dict and calls Data.add()  it
 	def getCurrentNumber(): ##Strips position from inputNumbers
 		currentNumber = ""
 		if len(inputNumbers) < 1:
 			return
-		else for inputnumber in inputNumbers:
-			currentNumber = currentNumber + inputnumber[0]
+		else:
+			for inputnumber in inputNumbers:
+				currentNumber = currentNumber + inputnumber[0]
 		return str(currentNumber)
 	currentNumber = getCurrentNumber()
 	def getCurrentTime():
@@ -296,21 +258,21 @@ def submit(): ##Creates storedValues dict and calls Data.add()  it
 		storedValues.append(Data.Datum(newDatum))
 	Data.add()
 
-clock = pygame.time.Clock()
 
+clock = pygame.time.Clock()
 while True:
 	key = pygame.key.get_pressed()
 	pygame.Surface.fill(screen, (0x445566))
 	myGraph.displayGraph()
 	myGraph.graphControl()
 	displayMenuButtons()
-	isButtonPressed()
+	monitorButtons()
 	displayInputWindow()
 	displayInput()
 	pygame.display.flip()
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
-			break;
+			break
 		else:
 			collectInput(event)
 	clock.tick(20)
